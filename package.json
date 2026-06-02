@@ -1,0 +1,17 @@
+{
+  "name": "dmal-blockchain-tpi",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "compile": "XDG_CONFIG_HOME=.hardhat-config XDG_DATA_HOME=.hardhat-data XDG_CACHE_HOME=.hardhat-cache hardhat compile",
+    "test": "XDG_CONFIG_HOME=.hardhat-config XDG_DATA_HOME=.hardhat-data XDG_CACHE_HOME=.hardhat-cache hardhat test"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "5.0.2",
+    "hardhat": "^2.22.0"
+  }
+}
