@@ -711,11 +711,11 @@
 			]
 		},
 		"contracts/CompositionRegistry.sol": {
-			"keccak256": "0x8e4b42397dfda10ee2dc14d196d98b886a89a4223397e7c12365fb586b85a527",
+			"keccak256": "0x66ea8f3611c276b1a40113d5f113c41c5b3f9d573ed33bb60ab42081e81e93eb",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://18166c9d7cf0734c083ab1051b14bf255d28d4c0a06cc04a9ca2d95c88b0d0b1",
-				"dweb:/ipfs/QmVVwD9yw7kYbmfy3Ym7Yy9AgaE29QGJiPySy1Yf737PCb"
+				"bzz-raw://ef2fe9e5a57288b511894f670b51f8087d0a54ee5993fd865b75951f3299f192",
+				"dweb:/ipfs/QmbTMSjN38b52WbEnYoC8j8RxMCPgL8EqRNf3BTWxTQKQY"
 			]
 		}
 	},

@@ -7,7 +7,6 @@ interface IAcademy {
     function activeStudents(address _student) external view returns (bool);
 }
 
-
 /// @dev No hay fondos acumulados para retirar.
 error NoFundsToWithdraw();
 /// @dev La dirección de destino del retiro es la dirección cero.
@@ -32,9 +31,9 @@ contract CompositionRegistry is AccessControl {
     }
 
     IAcademy public academyContract;
-
+    
     // La tarifa inicia en 0 por defecto. El admin puede cambiarla con setRegistrationFee.
-    uint256 public registrationFee;
+    uint256 public registrationFee; 
     uint256 public compositionCount;
 
     // Autor => (Hash de Compromiso => Altura del Bloque de Registro)
