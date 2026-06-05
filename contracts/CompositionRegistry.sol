@@ -7,6 +7,7 @@ interface IAcademy {
     function activeStudents(address _student) external view returns (bool);
 }
 
+
 /// @dev No hay fondos acumulados para retirar.
 error NoFundsToWithdraw();
 /// @dev La dirección de destino del retiro es la dirección cero.
@@ -31,6 +32,8 @@ contract CompositionRegistry is AccessControl {
     }
 
     IAcademy public academyContract;
+
+    // La tarifa inicia en 0 por defecto. El admin puede cambiarla con setRegistrationFee.
     uint256 public registrationFee;
     uint256 public compositionCount;
 
@@ -46,16 +49,14 @@ contract CompositionRegistry is AccessControl {
     event AcademyContractUpdated(address indexed oldAcademy, address indexed newAcademy);
 
     /**
-     * @notice Inicializa el contrato con la Academia, la tasa de registro y el administrador.
+     * @notice Inicializa el contrato con la Academia y el administrador.
      * @param _academyContract Dirección del contrato ConservatoryAcademy para validar regularidad de alumnos.
-     * @param _initialFee Tasa de registro en wei exigida a compositores externos (alumnos exentos).
      * @param _admin Dirección que recibirá DEFAULT_ADMIN_ROLE y FEE_SETTER_ROLE.
      */
-    constructor(address _academyContract, uint256 _initialFee, address _admin) {
+    constructor(address _academyContract, address _admin) {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(FEE_SETTER_ROLE, _admin);
         academyContract = IAcademy(_academyContract);
-        registrationFee = _initialFee;
     }
 
     /**

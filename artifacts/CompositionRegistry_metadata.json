@@ -9,7 +9,12 @@
 				"inputs": [
 					{
 						"internalType": "address",
-						"name": "_initialAdmin",
+						"name": "_academyContract",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_admin",
 						"type": "address"
 					}
 				],
@@ -38,97 +43,100 @@
 				"type": "error"
 			},
 			{
-				"anonymous": false,
-				"inputs": [
-					{
-						"indexed": true,
-						"internalType": "address",
-						"name": "student",
-						"type": "address"
-					},
-					{
-						"indexed": true,
-						"internalType": "uint256",
-						"name": "careerId",
-						"type": "uint256"
-					}
-				],
-				"name": "CareerAssigned",
-				"type": "event"
-			},
-			{
-				"anonymous": false,
-				"inputs": [
-					{
-						"indexed": true,
-						"internalType": "uint256",
-						"name": "careerId",
-						"type": "uint256"
-					},
-					{
-						"indexed": false,
-						"internalType": "uint256[]",
-						"name": "subjectIds",
-						"type": "uint256[]"
-					}
-				],
-				"name": "CurriculumDefined",
-				"type": "event"
-			},
-			{
-				"anonymous": false,
-				"inputs": [
-					{
-						"indexed": true,
-						"internalType": "address",
-						"name": "student",
-						"type": "address"
-					},
-					{
-						"indexed": true,
-						"internalType": "uint256",
-						"name": "subjectId",
-						"type": "uint256"
-					},
-					{
-						"indexed": false,
-						"internalType": "uint8",
-						"name": "score",
-						"type": "uint8"
-					},
-					{
-						"indexed": true,
-						"internalType": "uint16",
-						"name": "professorId",
-						"type": "uint16"
-					}
-				],
-				"name": "GradeSubmitted",
-				"type": "event"
-			},
-			{
-				"anonymous": false,
-				"inputs": [
-					{
-						"indexed": true,
-						"internalType": "address",
-						"name": "student",
-						"type": "address"
-					},
-					{
-						"indexed": true,
-						"internalType": "uint256",
-						"name": "subjectId",
-						"type": "uint256"
-					}
-				],
-				"name": "HistoricalRecordImported",
-				"type": "event"
-			},
-			{
-				"anonymous": false,
 				"inputs": [],
-				"name": "MigrationDeactivated",
+				"name": "InvalidDestination",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "NoFundsToWithdraw",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "TransferFailed",
+				"type": "error"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "oldAcademy",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "newAcademy",
+						"type": "address"
+					}
+				],
+				"name": "AcademyContractUpdated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "author",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "commitHash",
+						"type": "bytes32"
+					}
+				],
+				"name": "CompositionCommitted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "author",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "compositionId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "ipfsHash",
+						"type": "string"
+					}
+				],
+				"name": "CompositionRegistered",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "oldFee",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "newFee",
+						"type": "uint256"
+					}
+				],
+				"name": "FeeUpdated",
 				"type": "event"
 			},
 			{
@@ -207,31 +215,6 @@
 				"type": "event"
 			},
 			{
-				"anonymous": false,
-				"inputs": [
-					{
-						"indexed": true,
-						"internalType": "address",
-						"name": "compromisedWallet",
-						"type": "address"
-					},
-					{
-						"indexed": true,
-						"internalType": "address",
-						"name": "newWallet",
-						"type": "address"
-					},
-					{
-						"indexed": true,
-						"internalType": "address",
-						"name": "canonicalStudent",
-						"type": "address"
-					}
-				],
-				"name": "StudentWalletMigrated",
-				"type": "event"
-			},
-			{
 				"inputs": [],
 				"name": "DEFAULT_ADMIN_ROLE",
 				"outputs": [
@@ -246,7 +229,7 @@
 			},
 			{
 				"inputs": [],
-				"name": "MIGRATION_ADMIN_ROLE",
+				"name": "FEE_SETTER_ROLE",
 				"outputs": [
 					{
 						"internalType": "bytes32",
@@ -259,165 +242,26 @@
 			},
 			{
 				"inputs": [],
-				"name": "PROFESSOR_ROLE",
+				"name": "academyContract",
 				"outputs": [
 					{
-						"internalType": "bytes32",
+						"internalType": "contract IAcademy",
 						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "_commitHash",
 						"type": "bytes32"
 					}
 				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [],
-				"name": "RECOVERER_ROLE",
-				"outputs": [
-					{
-						"internalType": "bytes32",
-						"name": "",
-						"type": "bytes32"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [],
-				"name": "REGISTRAR_ROLE",
-				"outputs": [
-					{
-						"internalType": "bytes32",
-						"name": "",
-						"type": "bytes32"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "",
-						"type": "uint256"
-					}
-				],
-				"name": "academicRecords",
-				"outputs": [
-					{
-						"internalType": "uint8",
-						"name": "score",
-						"type": "uint8"
-					},
-					{
-						"internalType": "uint8",
-						"name": "attempts",
-						"type": "uint8"
-					},
-					{
-						"internalType": "uint32",
-						"name": "approvalDate",
-						"type": "uint32"
-					},
-					{
-						"internalType": "bool",
-						"name": "approved",
-						"type": "bool"
-					},
-					{
-						"internalType": "uint16",
-						"name": "professorId",
-						"type": "uint16"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					}
-				],
-				"name": "activeStudents",
-				"outputs": [
-					{
-						"internalType": "bool",
-						"name": "",
-						"type": "bool"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					}
-				],
-				"name": "activeWalletOfCanonical",
-				"outputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					}
-				],
-				"name": "canonicalStudent",
-				"outputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [],
-				"name": "deactivateMigration",
-				"outputs": [],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "uint256",
-						"name": "_careerId",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256[]",
-						"name": "_subjectIds",
-						"type": "uint256[]"
-					}
-				],
-				"name": "defineCurriculum",
+				"name": "commitComposition",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
@@ -426,18 +270,37 @@
 				"inputs": [
 					{
 						"internalType": "address",
-						"name": "_student",
+						"name": "",
 						"type": "address"
 					},
 					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"name": "commits",
+				"outputs": [
+					{
 						"internalType": "uint256",
-						"name": "_careerId",
+						"name": "",
 						"type": "uint256"
 					}
 				],
-				"name": "enrollStudent",
-				"outputs": [],
-				"stateMutability": "nonpayable",
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "compositionCount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
 				"type": "function"
 			},
 			{
@@ -480,25 +343,6 @@
 			{
 				"inputs": [
 					{
-						"internalType": "address",
-						"name": "_student",
-						"type": "address"
-					}
-				],
-				"name": "hasCompletedAllSubjects",
-				"outputs": [
-					{
-						"internalType": "bool",
-						"name": "",
-						"type": "bool"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
 						"internalType": "bytes32",
 						"name": "role",
 						"type": "bytes32"
@@ -523,79 +367,68 @@
 			{
 				"inputs": [
 					{
-						"internalType": "address[]",
-						"name": "_students",
-						"type": "address[]"
+						"internalType": "string",
+						"name": "_ipfsHash",
+						"type": "string"
 					},
 					{
-						"internalType": "uint256[]",
-						"name": "_subjectIds",
-						"type": "uint256[]"
+						"internalType": "string",
+						"name": "_title",
+						"type": "string"
 					},
 					{
-						"components": [
-							{
-								"internalType": "uint8",
-								"name": "score",
-								"type": "uint8"
-							},
-							{
-								"internalType": "uint8",
-								"name": "attempts",
-								"type": "uint8"
-							},
-							{
-								"internalType": "uint32",
-								"name": "approvalDate",
-								"type": "uint32"
-							},
-							{
-								"internalType": "bool",
-								"name": "approved",
-								"type": "bool"
-							},
-							{
-								"internalType": "uint16",
-								"name": "professorId",
-								"type": "uint16"
-							}
-						],
-						"internalType": "struct ConservatoryAcademy.SubjectRecord[]",
-						"name": "_records",
-						"type": "tuple[]"
+						"internalType": "bytes32",
+						"name": "_salt",
+						"type": "bytes32"
 					}
 				],
-				"name": "importHistoricalRecords",
+				"name": "registerComposition",
 				"outputs": [],
-				"stateMutability": "nonpayable",
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "registrationFee",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
 				"type": "function"
 			},
 			{
 				"inputs": [
 					{
-						"internalType": "address",
-						"name": "_compromisedWallet",
-						"type": "address"
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "registry",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "ipfsHash",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "title",
+						"type": "string"
 					},
 					{
 						"internalType": "address",
-						"name": "_newWallet",
+						"name": "author",
 						"type": "address"
-					}
-				],
-				"name": "migrateStudentWallet",
-				"outputs": [],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [],
-				"name": "migrationPeriodActive",
-				"outputs": [
+					},
 					{
-						"internalType": "bool",
-						"name": "",
-						"type": "bool"
+						"internalType": "uint32",
+						"name": "timestamp",
+						"type": "uint32"
 					}
 				],
 				"stateMutability": "view",
@@ -641,16 +474,11 @@
 				"inputs": [
 					{
 						"internalType": "address",
-						"name": "_student",
+						"name": "_newAcademy",
 						"type": "address"
-					},
-					{
-						"internalType": "bool",
-						"name": "_status",
-						"type": "bool"
 					}
 				],
-				"name": "setStudentActivity",
+				"name": "setAcademyContract",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
@@ -658,46 +486,12 @@
 			{
 				"inputs": [
 					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					}
-				],
-				"name": "studentCareer",
-				"outputs": [
-					{
 						"internalType": "uint256",
-						"name": "",
+						"name": "_newFee",
 						"type": "uint256"
 					}
 				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "_student",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "_subjectId",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint8",
-						"name": "_score",
-						"type": "uint8"
-					},
-					{
-						"internalType": "uint16",
-						"name": "_professorId",
-						"type": "uint16"
-					}
-				],
-				"name": "submitGrade",
+				"name": "setRegistrationFee",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
@@ -720,10 +514,23 @@
 				],
 				"stateMutability": "view",
 				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "_destination",
+						"type": "address"
+					}
+				],
+				"name": "withdrawFunds",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
 			}
 		],
 		"devdoc": {
-			"author": "TypeIt - UTN Blockchain TPI",
+			"author": "Valentino - UTN Blockchain TPI",
 			"errors": {
 				"AccessControlBadConfirmation()": [
 					{
@@ -733,6 +540,21 @@
 				"AccessControlUnauthorizedAccount(address,bytes32)": [
 					{
 						"details": "The `account` is missing a role."
+					}
+				],
+				"InvalidDestination()": [
+					{
+						"details": "La dirección de destino del retiro es la dirección cero."
+					}
+				],
+				"NoFundsToWithdraw()": [
+					{
+						"details": "No hay fondos acumulados para retirar."
+					}
+				],
+				"TransferFailed()": [
+					{
+						"details": "La transferencia de ETH falló."
 					}
 				]
 			},
@@ -749,21 +571,15 @@
 			},
 			"kind": "dev",
 			"methods": {
+				"commitComposition(bytes32)": {
+					"params": {
+						"_commitHash": "Calculado como keccak256(abi.encodePacked(ipfsHash, msg.sender, salt))."
+					}
+				},
 				"constructor": {
 					"params": {
-						"_initialAdmin": "Dirección que recibirá DEFAULT_ADMIN_ROLE, REGISTRAR_ROLE y RECOVERER_ROLE."
-					}
-				},
-				"defineCurriculum(uint256,uint256[])": {
-					"params": {
-						"_careerId": "Identificador numérico de la carrera (debe ser > 0).",
-						"_subjectIds": "Array de IDs de materias que conforman el plan de estudio obligatorio."
-					}
-				},
-				"enrollStudent(address,uint256)": {
-					"params": {
-						"_careerId": "ID de la carrera en la que se inscribe el alumno.",
-						"_student": "Dirección de la wallet del alumno a matricular."
+						"_academyContract": "Dirección del contrato ConservatoryAcademy para validar regularidad de alumnos.",
+						"_admin": "Dirección que recibirá DEFAULT_ADMIN_ROLE y FEE_SETTER_ROLE."
 					}
 				},
 				"getRoleAdmin(bytes32)": {
@@ -772,28 +588,15 @@
 				"grantRole(bytes32,address)": {
 					"details": "Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleGranted} event."
 				},
-				"hasCompletedAllSubjects(address)": {
-					"params": {
-						"_student": "Dirección del alumno (puede ser wallet activa o wallet comprometida previa)."
-					},
-					"returns": {
-						"_0": "true si el alumno canonical ha aprobado todas las materias de su carrera; false en caso contrario."
-					}
-				},
 				"hasRole(bytes32,address)": {
 					"details": "Returns `true` if `account` has been granted `role`."
 				},
-				"importHistoricalRecords(address[],uint256[],(uint8,uint8,uint32,bool,uint16)[])": {
+				"registerComposition(string,string,bytes32)": {
+					"details": "Implementa el patrón CEI. Exige al menos 1 bloque de diferencia para evitar inyecciones en el mempool.",
 					"params": {
-						"_records": "Array de estructuras SubjectRecord con los datos académicos a importar.",
-						"_students": "Array de direcciones de alumnos a importar.",
-						"_subjectIds": "Array de IDs de materias correspondientes a cada registro."
-					}
-				},
-				"migrateStudentWallet(address,address)": {
-					"params": {
-						"_compromisedWallet": "Dirección de la wallet comprometida que se dará de baja.",
-						"_newWallet": "Nueva dirección segura que asumirá la identidad del alumno."
+						"_ipfsHash": "CID v1 del archivo de la obra almacenado en IPFS.",
+						"_salt": "Valor secreto utilizado en la fase de commit para construir el hash de compromiso.",
+						"_title": "Título descriptivo de la composición."
 					}
 				},
 				"renounceRole(bytes32,address)": {
@@ -802,65 +605,58 @@
 				"revokeRole(bytes32,address)": {
 					"details": "Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleRevoked} event."
 				},
-				"setStudentActivity(address,bool)": {
+				"setAcademyContract(address)": {
 					"params": {
-						"_status": "Nuevo estado de regularidad (true = activo, false = inactivo).",
-						"_student": "Dirección activa del alumno cuyo estado se desea modificar."
+						"_newAcademy": "Nueva dirección del contrato ConservatoryAcademy."
 					}
 				},
-				"submitGrade(address,uint256,uint8,uint16)": {
+				"setRegistrationFee(uint256)": {
 					"params": {
-						"_professorId": "ID numérico del docente firmante del acta.",
-						"_score": "Nota obtenida (0–100). Se considera aprobada con 60 o más.",
-						"_student": "Dirección activa del alumno evaluado.",
-						"_subjectId": "ID de la materia rendida (índice en el array de registros académicos)."
+						"_newFee": "Nuevo valor de la tasa en wei."
 					}
 				},
 				"supportsInterface(bytes4)": {
 					"details": "Returns true if this contract implements the interface defined by `interfaceId`. See the corresponding https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[ERC section] to learn more about how these ids are created. This function call must use less than 30 000 gas."
+				},
+				"withdrawFunds(address)": {
+					"details": "Implementa el patrón CEI: valida condiciones antes de ejecutar la transferencia externa.",
+					"params": {
+						"_destination": "Dirección payable de la tesorería que recibirá el saldo acumulado."
+					}
 				}
 			},
-			"title": "ConservatoryAcademy",
+			"title": "CompositionRegistry",
 			"version": 1
 		},
 		"userdoc": {
 			"kind": "user",
 			"methods": {
+				"commitComposition(bytes32)": {
+					"notice": "PASO 1 (Commit): Registra un compromiso temporal secreto."
+				},
 				"constructor": {
-					"notice": "Inicializa el contrato y otorga todos los roles operativos al administrador inicial."
+					"notice": "Inicializa el contrato con la Academia y el administrador."
 				},
-				"deactivateMigration()": {
-					"notice": "Clausura definitiva e irreversible del puente de migración histórica."
+				"registerComposition(string,string,bytes32)": {
+					"notice": "PASO 2 (Reveal & Register): Revela la obra y finaliza el registro."
 				},
-				"defineCurriculum(uint256,uint256[])": {
-					"notice": "Define la currícula obligatoria para una carrera específica."
+				"setAcademyContract(address)": {
+					"notice": "Actualiza la dirección del contrato de Academia usado para validar regularidad."
 				},
-				"enrollStudent(address,uint256)": {
-					"notice": "Matricula a un estudiante en una carrera y activa su estatus."
+				"setRegistrationFee(uint256)": {
+					"notice": "Modifica la tasa de registro cobrada a compositores externos."
 				},
-				"hasCompletedAllSubjects(address)": {
-					"notice": "Determina si el alumno ha aprobado de forma inmutable el 100% de su currícula asignada."
-				},
-				"importHistoricalRecords(address[],uint256[],(uint8,uint8,uint32,bool,uint16)[])": {
-					"notice": "MÓDULO DE MIGRACIÓN: carga en lote de datos históricos Web2 omitiendo firmas ordinarias."
-				},
-				"migrateStudentWallet(address,address)": {
-					"notice": "Permite migrar la identidad digital e historial de un alumno ante robo o pérdida de su wallet privada."
-				},
-				"setStudentActivity(address,bool)": {
-					"notice": "Cambia el estado de actividad de un estudiante."
-				},
-				"submitGrade(address,uint256,uint8,uint16)": {
-					"notice": "undefinedRegistra una nota académica ordinaria en el historial del alumno."
+				"withdrawFunds(address)": {
+					"notice": "Permite retirar fondos de forma segura hacia la tesorería institucional."
 				}
 			},
-			"notice": "Gestiona el historial académico de los alumnos empaquetado en arrays para optimizar gas, las carreras, la currícula obligatoria, inscripciones y un puente de migración/recuperación de wallets.",
+			"notice": "Permite a los alumnos y externos registrar el hash criptográfico de sus obras musicales en IPFS y la EVM (Proof of Existence) usando el patrón Commit-Reveal para evitar front-running.",
 			"version": 1
 		}
 	},
 	"settings": {
 		"compilationTarget": {
-			"contracts/ConservatoryAcademy.sol": "ConservatoryAcademy"
+			"contracts/CompositionRegistry.sol": "CompositionRegistry"
 		},
 		"evmVersion": "prague",
 		"libraries": {},
@@ -914,12 +710,12 @@
 				"dweb:/ipfs/QmadRjHbkicwqwwh61raUEapaVEtaLMcYbQZWs9gUkgj3u"
 			]
 		},
-		"contracts/ConservatoryAcademy.sol": {
-			"keccak256": "0x20fbd76209b7564748fed77a2810d9cbe374ae7afab637cdc762f76b2b6467c6",
+		"contracts/CompositionRegistry.sol": {
+			"keccak256": "0x8e4b42397dfda10ee2dc14d196d98b886a89a4223397e7c12365fb586b85a527",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://484357cd68c763ae9f2a721d2443b20fe31012c0058ef0b32a2a45a861e90eed",
-				"dweb:/ipfs/QmShaq2m4WoMZFC63khG9AdNdVE7JjtN1CkwiUctqPWPWf"
+				"bzz-raw://18166c9d7cf0734c083ab1051b14bf255d28d4c0a06cc04a9ca2d95c88b0d0b1",
+				"dweb:/ipfs/QmVVwD9yw7kYbmfy3Ym7Yy9AgaE29QGJiPySy1Yf737PCb"
 			]
 		}
 	},
