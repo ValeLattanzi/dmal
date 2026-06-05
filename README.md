@@ -1,6 +1,7 @@
 # 🎼 Decentralized Music Academy Ledger (DMAL)
+
 > **Trabajo Práctico Integrador — Tecnologías DLT, Contratos Inteligentes y Blockchain**  
-> *UTN · ISI 5to Año*
+> _UTN · ISI 5to Año_
 
 Ecosistema descentralizado basado en contratos inteligentes diseñado para resolver problemáticas críticas de seguridad documental y propiedad intelectual en instituciones de enseñanza artística superior (Conservatorios de Música).
 
@@ -44,22 +45,28 @@ graph TD
 Los archivos fuente están ubicados en la carpeta [`contracts/`](contracts/):
 
 ### A. [`ConservatoryAcademy.sol`](contracts/ConservatoryAcademy.sol)
+
 Módulo centralizador de la vida académica de la institución.
-*   **Optimización de Storage (Gas Packing):** Los registros de exámenes se empaquetan en una estructura `SubjectRecord` de **9 bytes** que ocupa un único slot de storage de la EVM, reduciendo un 65% el costo de gas en escrituras (`SSTORE`).
-*   **Mapeo de Carreras On-Chain:** Almacena la currícula obligatoria y evalúa en caliente si un alumno completó el plan de estudios (`hasCompletedAllSubjects`), eliminando arrays redundantes dinámicos para mayor consistencia de estado.
-*   **Módulo de Migración Histórica:** Habilita un período excepcional controlado (`migrationPeriodActive`) para la carga de registros Web2 por lotes, clausurándose de manera irreversible post-transición.
+
+- **Optimización de Storage (Gas Packing):** Los registros de exámenes se empaquetan en una estructura `SubjectRecord` de **9 bytes** que ocupa un único slot de storage de la EVM, reduciendo un 65% el costo de gas en escrituras (`SSTORE`).
+- **Mapeo de Carreras On-Chain:** Almacena la currícula obligatoria y evalúa en caliente si un alumno completó el plan de estudios (`hasCompletedAllSubjects`), eliminando arrays redundantes dinámicos para mayor consistencia de estado.
+- **Módulo de Migración Histórica:** Habilita un período excepcional controlado (`migrationPeriodActive`) para la carga de registros Web2 por lotes, clausurándose de manera irreversible post-transición.
 
 ### B. [`CompositionRegistry.sol`](contracts/CompositionRegistry.sol)
+
 Gestor de registros de propiedad intelectual descentralizada.
-*   **Mitigación de Front-Running (Commit-Reveal):** Flujo de dos transacciones independientes. El alumno envía primero un hash secreto del compromiso. Una vez minado el bloque, revela los datos crudos de su obra. Esto anula plagios en tránsito de transacciones expuestas en el mempool.
-*   **Tarifación Dinámica:** Los alumnos regulares registran sus obras de forma gratuita, mientras que los externos pagan una tasa mutable modificable por la gobernanza (`FEE_SETTER_ROLE`).
-*   **Retiro Seguro (Safe Withdrawal):** Los fondos recaudados se retiran mediante llamadas de bajo nivel `.call` protegiendo al contrato de bloqueos accidentales de gas.
+
+- **Mitigación de Front-Running (Commit-Reveal):** Flujo de dos transacciones independientes. El alumno envía primero un hash secreto del compromiso. Una vez minado el bloque, revela los datos crudos de su obra. Esto anula plagios en tránsito de transacciones expuestas en el mempool.
+- **Tarifación Dinámica:** Los alumnos regulares registran sus obras de forma gratuita, mientras que los externos pagan una tasa mutable modificable por la gobernanza (`FEE_SETTER_ROLE`).
+- **Retiro Seguro (Safe Withdrawal):** Los fondos recaudados se retiran mediante llamadas de bajo nivel `.call` protegiendo al contrato de bloqueos accidentales de gas.
 
 ### C. [`ConservatoryDiploma.sol`](contracts/ConservatoryDiploma.sol)
+
 Expide diplomas inalterables como **Soulbound Tokens (SBT)** heredando el estándar ERC-721.
-*   **Bloqueo de Transferencias:** Inhabilita las funciones `transferFrom` y `safeTransferFrom` anulando mercados secundarios de diplomas universitarios.
-*   **Acuñación Inteligente:** Llama cross-contract a la Academia para validar el egreso del alumno en tiempo de ejecución.
-*   **Mecanismo de Recuperación de Llaves (`burnAndReissue`):** Ante robo o pérdida de claves de la wallet del graduado, la administración (`RECOVERER_ROLE`) puede invalidar (quemar) el diploma comprometido y reacuñarlo bajo un **nuevo Token ID incremental** a una wallet segura, garantizando la trazabilidad histórica de eventos.
+
+- **Bloqueo de Transferencias:** Inhabilita las funciones `transferFrom` y `safeTransferFrom` anulando mercados secundarios de diplomas universitarios.
+- **Acuñación Inteligente:** Llama cross-contract a la Academia para validar el egreso del alumno en tiempo de ejecución.
+- **Mecanismo de Recuperación de Llaves (`burnAndReissue`):** Ante robo o pérdida de claves de la wallet del graduado, la administración (`RECOVERER_ROLE`) puede invalidar (quemar) el diploma comprometido y reacuñarlo bajo un **nuevo Token ID incremental** a una wallet segura, garantizando la trazabilidad histórica de eventos.
 
 ---
 
@@ -115,14 +122,14 @@ Foundry sigue siendo una alternativa posible, pero el repositorio no incluye con
 
 La suite de Hardhat automatiza el flujo usando signers fijos, equivalentes a cuentas de Remix VM:
 
-| Cuenta Hardhat | Rol |
-| --- | --- |
-| `admin` | Despliega contratos, define currícula, matricula, emite diplomas y retira fondos |
-| `professor` | Firma notas académicas |
-| `student` | Recibe notas, registra composición y recibe diploma SBT |
-| `recoveryWallet` | Recibe diploma reemitido |
-| `externalComposer` | Registra una composición pagando tasa |
-| `treasury` | Recibe fondos retirados |
+| Cuenta Hardhat     | Rol                                                                              |
+| ------------------ | -------------------------------------------------------------------------------- |
+| `admin`            | Despliega contratos, define currícula, matricula, emite diplomas y retira fondos |
+| `professor`        | Firma notas académicas                                                           |
+| `student`          | Recibe notas, registra composición y recibe diploma SBT                          |
+| `recoveryWallet`   | Recibe diploma reemitido                                                         |
+| `externalComposer` | Registra una composición pagando tasa                                            |
+| `treasury`         | Recibe fondos retirados                                                          |
 
 Los tests verdes cubren flujos válidos de academia, diplomas SBT, registro commit-reveal, reemisión y retiro de fondos. Los tests rojos cubren permisos insuficientes, currícula incompleta, transferencias bloqueadas del SBT, reveal inválido, fee incorrecto y retiros inválidos.
 
@@ -211,12 +218,12 @@ Asignaciones necesarias:
 
 Probar el flujo con al menos tres cuentas distintas:
 
-| Cuenta | Rol | Acciones |
-| --- | --- | --- |
+| Cuenta      | Rol                          | Acciones                                                              |
+| ----------- | ---------------------------- | --------------------------------------------------------------------- |
 | `Account 0` | Admin / registrador / emisor | Despliega, define currícula, matricula, emite diploma y retira fondos |
-| `Account 1` | Profesor | Firma notas con `submitGrade` |
-| `Account 2` | Alumno | Recibe notas, registra obra y recibe diploma SBT |
-| `Account 3` | Wallet de recuperación | Recibe el diploma reemitido en prueba de contingencia |
+| `Account 1` | Profesor                     | Firma notas con `submitGrade`                                         |
+| `Account 2` | Alumno                       | Recibe notas, registra obra y recibe diploma SBT                      |
+| `Account 3` | Wallet de recuperación       | Recibe el diploma reemitido en prueba de contingencia                 |
 
 Casos positivos:
 
@@ -235,20 +242,37 @@ Casos negativos:
 
 ### 4.8. Checklist de Entrega
 
-| Requisito | Evidencia en el repo |
-| --- | --- |
-| Al menos una función en Contrato 1 llama a Contrato 2 | `ConservatoryDiploma` llama a `ConservatoryAcademy` con `hasCompletedAllSubjects` y `migrateStudentWallet`; `CompositionRegistry` llama `activeStudents` |
-| Todas las funciones públicas tienen NatSpec | Los contratos documentan `@notice`, `@param` y `@return` cuando corresponde |
-| Al menos una función con ETH implementa CEI | `registerComposition` y `withdrawFunds` separan checks, effects e interactions |
-| Existe al menos un modifier de acceso | `onlyRole(...)` de OpenZeppelin protege funciones administrativas |
-| Eventos declarados y emitidos correctamente | `GradeSubmitted`, `CompositionRegistered`, `DiplomaIssued`, `DiplomaReissued`, entre otros |
-| Al menos un custom error en vez de `require` con string | `SBTTransferLocked`, `CurriculumIncomplete`, `NoFundsToWithdraw`, etc. |
-| Funciones de lectura usan `view` o `pure` | `hasCompletedAllSubjects`, `supportsInterface`, getters públicos |
-| Flujo completo probado con 3+ cuentas en Remix VM | Seguir el plan de testing manual de la sección 4.7 |
+| Requisito                                               | Evidencia en el repo                                                                                                                                     |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Al menos una función en Contrato 1 llama a Contrato 2   | `ConservatoryDiploma` llama a `ConservatoryAcademy` con `hasCompletedAllSubjects` y `migrateStudentWallet`; `CompositionRegistry` llama `activeStudents` |
+| Todas las funciones públicas tienen NatSpec             | Los contratos documentan `@notice`, `@param` y `@return` cuando corresponde                                                                              |
+| Al menos una función con ETH implementa CEI             | `registerComposition` y `withdrawFunds` separan checks, effects e interactions                                                                           |
+| Existe al menos un modifier de acceso                   | `onlyRole(...)` de OpenZeppelin protege funciones administrativas                                                                                        |
+| Eventos declarados y emitidos correctamente             | `GradeSubmitted`, `CompositionRegistered`, `DiplomaIssued`, `DiplomaReissued`, entre otros                                                               |
+| Al menos un custom error en vez de `require` con string | `SBTTransferLocked`, `CurriculumIncomplete`, `NoFundsToWithdraw`, etc.                                                                                   |
+| Funciones de lectura usan `view` o `pure`               | `hasCompletedAllSubjects`, `supportsInterface`, getters públicos                                                                                         |
+| Flujo completo probado con 3+ cuentas en Remix VM       | Seguir el plan de testing manual de la sección 4.7                                                                                                       |
 
 ---
 
-## 🔌 5. Integración con el Backend Administrativo Web2
+## 📍 5. ROADMAP de Prueba
+
+Para obtener una guía **paso a paso detallada** del flujo completo de emisión de diploma, incluyendo validaciones, cross-contract calls, eventos y costos de gas estimados:
+
+👉 **[Ver: Hoja de Ruta de Diploma (DIPLOMA_FLOW_ROADMAP.md)](DIPLOMA_FLOW_ROADMAP.md)**
+
+Este documento incluye:
+
+- ✅ 5 pasos detallados (Carrera → Matriculación → Calificaciones → Verificación → Diploma SBT)
+- 💰 Tabla de costos de gas por función (~320K gas = ~6.4 MATIC total)
+- 🔗 Diagrama de cross-contract calls (Diploma → Academy)
+- 🧪 Checklist de testing manual en Remix
+- 📊 Estructura de datos optimizada (SubjectRecord de 9 bytes)
+- 🔐 Validaciones de seguridad implementadas
+
+---
+
+## 🔌 6. Integración con el Backend Administrativo Web2
 
 Para conectar los contratos inteligentes a una infraestructura administrativa tradicional sin comprometer la velocidad ni la resiliencia del sistema:
 
