@@ -272,7 +272,41 @@ Este documento incluye:
 
 ---
 
-## 🔌 6. Integración con el Backend Administrativo Web2
+## 📐 6. Decisiones de Arquitectura
+
+Para entender las **decisiones técnicas clave** detrás del diseño de los contratos:
+
+👉 **[Ver: Nota de Decisiones de Arquitectura (ARCHITECTURE_DECISIONS.md)](ARCHITECTURE_DECISIONS.md)**
+
+Este documento detalla:
+
+### Decisión #1: Diplomas como Soulbound Tokens (SBT)
+
+- ⚠️ Problema: Falsificación e inseguridad de credenciales
+- ✅ Solución: Tokens no transferibles vinculados a wallet
+- 🔧 Implementación: Override de `_update()` para bloquear transferencias
+- 💡 Justificación: Garantiza que diplomas son prueba irrefutable de egreso
+- 🔐 Mecanismo de recuperación: `burnAndReissue()` para wallet comprometida
+
+### Decisión #2: Optimización de Storage con Gas Packing
+
+- ⚠️ Problema: Costo prohibitivo de almacenamiento ($12M USD en escala)
+- ✅ Solución: Empacar 5 slots en 1 mediante reordenamiento de tipos
+- 🔧 Implementación: Estructura `SubjectRecord` de 9 bytes
+- 💰 Impacto: 90% ahorro de gas (~$10.8M USD en 3,000 calificaciones)
+- 📊 Ejemplos: Comparativas con y sin optimización
+
+Cada decisión incluye:
+- Contexto del problema
+- Implementación técnica completa (código real)
+- Ejemplos paso a paso en Remix
+- Diagramas visuales
+- Análisis de tradeoffs
+- Métricas cuantificables
+
+---
+
+## 🔌 7. Integración con el Backend Administrativo Web2
 
 Para conectar los contratos inteligentes a una infraestructura administrativa tradicional sin comprometer la velocidad ni la resiliencia del sistema:
 
