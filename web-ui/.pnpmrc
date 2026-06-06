@@ -1,0 +1,4 @@
+# pnpm configuration
+# Permitir scripts de dependencias nativas (keccak, secp256k1)
+auto-install-peers=true
+shamefully-hoist=false

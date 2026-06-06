@@ -15,6 +15,7 @@ export const Header = () => {
     setIsConnected,
     setGrades,
     setCompositions,
+    setDiplomaTokenId,
     showToast,
     addLog,
   } = useAppStore()
@@ -40,6 +41,7 @@ export const Header = () => {
         addLog(`[INFO] Chain - ${data.compositions.length} composición(es) cargada(s) desde la EVM`)
       }
       if (data.diplomaTokenId > 0) {
+        setDiplomaTokenId(data.diplomaTokenId)
         addLog(
           `[INFO] Chain - Diploma SBT #${data.diplomaTokenId} detectado en esta wallet`
         )

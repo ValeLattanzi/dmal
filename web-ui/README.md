@@ -12,18 +12,23 @@
 ## Quick Start
 
 ```bash
-# Instalar dependencias
+# Instalar dependencias (npm recomendado)
+npm install
+
+# O con pnpm (requiere: pnpm approve-builds primero)
 pnpm install
 
 # Servidor de desarrollo (http://localhost:5173)
-pnpm run dev
+npm run dev
 
 # Build para producción
-pnpm run build
+npm run build
 
 # Preview de la compilación
-pnpm run preview
+npm run preview
 ```
+
+> **Nota**: Este proyecto usa ethers.js que requiere compilación de módulos nativos (keccak, secp256k1). Se recomienda usar `npm` para evitar problemas de seguridad de pnpm.
 
 ## Estructura del Proyecto
 

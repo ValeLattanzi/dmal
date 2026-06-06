@@ -1,8 +1,89 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@theme {
+  --font-sans: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Custom color between slate-800 and slate-900 */
+  --color-slate-850: #162032;
+
+  /* Custom animations */
+  --animate-pulse-fast: pulse-fast 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-spin-slow: spin 3s linear infinite;
+  --animate-holo-shift: holoShift 6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-fast {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes holoShift {
+  0% { transform: translate(-30%, -30%) rotate(25deg); }
+  100% { transform: translate(30%, 30%) rotate(25deg); }
+}
+
+@layer base {
+  html {
+    height: 100%;
+    background-color: #0f172a;
+  }
+
+  body {
+    height: 100%;
+    background-color: #0f172a;
+    color: #e2e8f0;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  }
+
+  #root {
+    height: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .hologram-card {
+    background: linear-gradient(
+      135deg,
+      rgba(16, 185, 129, 0.1) 0%,
+      rgba(99, 102, 241, 0.1) 50%,
+      rgba(6, 182, 212, 0.1) 100%
+    );
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hologram-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 45%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 55%
+    );
+    transform: rotate(45deg);
+    transition: transform 0.5s ease;
+    animation: holoShift 6s ease-in-out infinite alternate;
+  }
+}
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {

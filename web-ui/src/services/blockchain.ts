@@ -17,6 +17,7 @@ interface OnChainStudentData {
 
 // Contract ABIs (corrected to match actual contract implementations)
 const ACADEMY_ABI = [
+  'function defineCurriculum(uint256 _careerId, uint256[] calldata _subjectIds) external',
   'function submitGrade(address _student, uint256 _subjectId, uint8 _score, uint16 _professorId) external',
   'function enrollStudent(address _student, uint256 _careerId) external',
   'function migrateStudentWallet(address _compromisedWallet, address _newWallet) external',
@@ -113,6 +114,32 @@ export class BlockchainService {
     return this.contracts
   }
 
+  async defineCurriculum(careerId: number, subjectIds: number[]) {
+    if (!this.contracts.academy) {
+      throw new Error('Academy contract not initialized')
+    }
+    try {
+      const tx = await this.contracts.academy.defineCurriculum(careerId, subjectIds)
+      return await tx.wait()
+    } catch (error) {
+      console.error('Error defining curriculum:', error)
+      throw error
+    }
+  }
+
+  async enrollStudent(studentAddress: string, careerId: number) {
+    if (!this.contracts.academy) {
+      throw new Error('Academy contract not initialized')
+    }
+    try {
+      const tx = await this.contracts.academy.enrollStudent(studentAddress, careerId)
+      return await tx.wait()
+    } catch (error) {
+      console.error('Error enrolling student:', error)
+      throw error
+    }
+  }
+
   async submitGrade(
     studentAddress: string,
     subjectId: number,
@@ -137,13 +164,41 @@ export class BlockchainService {
     }
   }
 
-  async registerComposition(title: string, ipfsHash: string) {
+  async mintDiploma(graduateAddress: string, legajoHash: string) {
+    if (!this.contracts.diploma) {
+      throw new Error('Diploma contract not initialized')
+    }
+    try {
+      const tx = await this.contracts.diploma.mintDiploma(graduateAddress, legajoHash)
+      return await tx.wait()
+    } catch (error) {
+      console.error('Error minting diploma:', error)
+      throw error
+    }
+  }
+
+  async commitComposition(commitHash: string) {
+    if (!this.contracts.composition) {
+      throw new Error('Composition contract not initialized')
+    }
+    try {
+      const tx = await this.contracts.composition.commitComposition(commitHash)
+      return await tx.wait()
+    } catch (error) {
+      console.error('Error committing composition:', error)
+      throw error
+    }
+  }
+
+  async registerComposition(ipfsHash: string, title: string, salt: string) {
     if (!this.contracts.composition) {
       throw new Error('Composition contract not initialized')
     }
 
     try {
-      const tx = await this.contracts.composition.registerComposition(title, ipfsHash)
+      const registrationFee = await this.contracts.composition.registrationFee()
+      const fee = Number(registrationFee) > 0 ? registrationFee : 0n
+      const tx = await this.contracts.composition.registerComposition(ipfsHash, title, salt, { value: fee })
       return await tx.wait()
     } catch (error) {
       console.error('Error registering composition:', error)

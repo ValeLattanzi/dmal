@@ -12,7 +12,7 @@ export const LogsConsole = () => {
   }, [logs])
 
   return (
-    <div className="bg-slate-950 rounded-2xl border border-slate-900 shadow-inner overflow-hidden flex flex-col h-[200px]">
+    <div className="glass rounded-2xl border border-slate-800 shadow-inner overflow-hidden flex flex-col h-[200px]">
       <div className="bg-slate-900/60 border-b border-slate-900 px-4 py-2 flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-slate-400 font-mono">
         <span>Servicio Backend: Spring Boot & Web3j Logs</span>
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>

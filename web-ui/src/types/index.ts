@@ -36,12 +36,18 @@ export interface Transaction {
 
 export type UserRole = 'professor' | 'student' | 'validator' | 'admin'
 
+export interface Toast {
+  message: string
+  type: 'success' | 'error' | 'confirmed' | 'info'
+}
+
 export interface AppState {
   currentRole: UserRole
   walletAddress: string
   isConnected: boolean
   isSbtRevoked: boolean
   blockHeight: number
+  diplomaTokenId: number
 }
 
 export interface ContractAddresses {

@@ -7,6 +7,7 @@ interface Store extends AppState {
   setIsConnected: (connected: boolean) => void
   setBlockHeight: (height: number) => void
   setSbtRevoked: (revoked: boolean) => void
+  setDiplomaTokenId: (id: number) => void
 
   // Academic Records
   grades: Grade[]
@@ -41,12 +42,14 @@ export const useAppStore = create<Store>((set) => ({
   isConnected: false,
   isSbtRevoked: false,
   blockHeight: 18492020,
+  diplomaTokenId: 0,
 
   setCurrentRole: (role) => set({ currentRole: role }),
   setWalletAddress: (address) => set({ walletAddress: address }),
   setIsConnected: (connected) => set({ isConnected: connected }),
   setBlockHeight: (height) => set({ blockHeight: height }),
   setSbtRevoked: (revoked) => set({ isSbtRevoked: revoked }),
+  setDiplomaTokenId: (id) => set({ diplomaTokenId: id }),
 
   // Grades
   grades: [
