@@ -90,11 +90,23 @@ export const Header = () => {
 
         {/* Wallet Connect Button or Status */}
         {isConnected ? (
-          <div className="flex items-center gap-2 bg-emerald-950/50 border border-emerald-800/50 px-3 py-2 rounded-xl text-xs font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-emerald-400">
-              {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-            </span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-emerald-950/50 border border-emerald-800/50 px-3 py-2 rounded-xl text-xs font-mono">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-emerald-400">
+                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                setIsConnected(false)
+                setWalletAddress('0xValentinoLattanzi77764DDR5LianLiIII')
+              }}
+              className="text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-2 rounded-lg transition-all"
+              title="Desconecta la wallet actual. Luego haz clic en Conectar para cambiar de cuenta."
+            >
+              Cambiar
+            </button>
           </div>
         ) : (
           <button
