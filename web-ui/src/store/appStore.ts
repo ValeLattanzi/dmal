@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AppState, UserRole, Grade, Composition, Transaction } from '../types'
+import type { AppState, UserRole, Grade, Composition, Transaction, Toast } from '../types'
 
 interface Store extends AppState {
   setCurrentRole: (role: UserRole) => void
@@ -12,10 +12,12 @@ interface Store extends AppState {
   grades: Grade[]
   addGrade: (grade: Grade) => void
   updateGradeStatus: (subjectId: number, status: 'PENDING' | 'CONFIRMED') => void
+  setGrades: (grades: Grade[]) => void
 
   // Compositions
   compositions: Composition[]
   addComposition: (composition: Composition) => void
+  setCompositions: (compositions: Composition[]) => void
 
   // Transactions
   transactions: Transaction[]
@@ -26,6 +28,10 @@ interface Store extends AppState {
   logs: string[]
   addLog: (log: string) => void
   clearHistory: () => void
+
+  // Toast
+  toast: Toast | null
+  showToast: (message: string, type: Toast['type']) => void
 }
 
 export const useAppStore = create<Store>((set) => ({
@@ -56,7 +62,7 @@ export const useAppStore = create<Store>((set) => ({
   ],
   addGrade: (grade) =>
     set((state) => ({
-      grades: [grade, ...state.grades],
+      grades: [...state.grades, grade],
     })),
   updateGradeStatus: (subjectId, status) =>
     set((state) => ({
@@ -64,6 +70,7 @@ export const useAppStore = create<Store>((set) => ({
         g.subjectId === subjectId ? { ...g, status } : g
       ),
     })),
+  setGrades: (grades) => set({ grades }),
 
   // Compositions
   compositions: [
@@ -80,6 +87,7 @@ export const useAppStore = create<Store>((set) => ({
     set((state) => ({
       compositions: [composition, ...state.compositions],
     })),
+  setCompositions: (compositions) => set({ compositions }),
 
   // Transactions
   transactions: [
@@ -107,11 +115,11 @@ export const useAppStore = create<Store>((set) => ({
   updateTransactionStatus: (txId, status) =>
     set((state) => ({
       transactions: state.transactions.map((t) =>
-        t.id === txId ? { ...t, status: status as any } : t
+        t.id === txId ? { ...t, status: status as Transaction['status'] } : t
       ),
     })),
 
-  // Logs
+  // Logs (append to maintain chronological order)
   logs: [
     '[INFO] 2026-05-31 14:40:12 - Application - Starting DMAL Spring Boot Engine on localhost:8080...',
     '[INFO] 2026-05-31 14:40:15 - BlockchainService - Web3j connection established with local EVM (Hardhat Node).',
@@ -119,7 +127,7 @@ export const useAppStore = create<Store>((set) => ({
   ],
   addLog: (log) =>
     set((state) => ({
-      logs: [log, ...state.logs],
+      logs: [...state.logs, log],
     })),
   clearHistory: () =>
     set({
@@ -130,4 +138,11 @@ export const useAppStore = create<Store>((set) => ({
       isSbtRevoked: false,
       walletAddress: '0xValentinoLattanzi77764DDR5LianLiIII',
     }),
+
+  // Toast
+  toast: null,
+  showToast: (message, type) => {
+    set({ toast: { message, type } })
+    setTimeout(() => set({ toast: null }), 4000)
+  },
 }))

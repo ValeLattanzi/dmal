@@ -1,25 +1,44 @@
 import { ethers, Contract } from 'ethers'
-import type { ContractAddresses } from '../types'
+import type { ContractAddresses, Grade, Composition } from '../types'
 
-// Contract ABIs (these will be copied from artifacts after build)
+// Subject names mapping for UI display
+const SUBJECT_NAMES: Record<number, string> = {
+  1: 'Composición Musical I',
+  2: 'Contrapunto Avanzado',
+  3: 'Audioperceptiva V',
+}
+
+interface OnChainStudentData {
+  isActive: boolean
+  grades: Grade[]
+  compositions: Composition[]
+  diplomaTokenId: number
+}
+
+// Contract ABIs (corrected to match actual contract implementations)
 const ACADEMY_ABI = [
-  'function submitGrade(address student, uint256 subjectId, uint8 score, uint16 professorId) external',
-  'function enrollStudent(address student, uint256 careerId) external',
-  'function hasCompletedAllSubjects(address student) external view returns (bool)',
-  'function migrateStudentWallet(address compromisedWallet, address newWallet) external',
-  'function academicRecords(address student) external view returns (uint8, uint8, uint32, bool, uint16)',
+  'function submitGrade(address _student, uint256 _subjectId, uint8 _score, uint16 _professorId) external',
+  'function enrollStudent(address _student, uint256 _careerId) external',
+  'function migrateStudentWallet(address _compromisedWallet, address _newWallet) external',
+  'function hasCompletedAllSubjects(address _student) external view returns (bool)',
+  'function activeStudents(address) external view returns (bool)',
+  'function canonicalStudent(address) external view returns (address)',
+  'function academicRecords(address, uint256) external view returns (uint8 score, uint8 attempts, uint32 approvalDate, bool approved, uint16 professorId)',
 ]
 
 const DIPLOMA_ABI = [
-  'function mintDiploma(address student) external',
-  'function revokeDiploma(address student) external',
-  'function isDiplomaActive(address student) external view returns (bool)',
+  'function mintDiploma(address _graduate, bytes32 _legajoHash) external',
+  'function burnAndReissue(address _compromisedWallet, address _newWallet, uint256 _tokenId) external',
+  'function studentDiploma(address) external view returns (uint256)',
+  'function nextTokenId() external view returns (uint256)',
 ]
 
 const COMPOSITION_ABI = [
-  'function registerComposition(string memory title, string memory ipfsHash) external',
-  'function compositions(uint256 id) external view returns (string, string, address, uint256)',
-  'event CompositionRegistered(address indexed author, string indexed ipfsHash, uint256 timestamp)',
+  'function commitComposition(bytes32 _commitHash) external',
+  'function registerComposition(string memory _ipfsHash, string memory _title, bytes32 _salt) external payable',
+  'function compositionCount() external view returns (uint256)',
+  'function registry(uint256) external view returns (string ipfsHash, string title, address author, uint32 timestamp)',
+  'function registrationFee() external view returns (uint256)',
 ]
 
 export class BlockchainService {
@@ -59,6 +78,16 @@ export class BlockchainService {
           COMPOSITION_ABI,
           this.signer
         )
+
+        // Listen for account and chain changes
+        ;(window as any).ethereum.on('accountsChanged', (newAccounts: string[]) => {
+          if (newAccounts.length === 0) {
+            window.location.reload()
+          }
+        })
+        ;(window as any).ethereum.on('chainChanged', () => {
+          window.location.reload()
+        })
 
         return {
           address: accounts[0],
@@ -149,6 +178,79 @@ export class BlockchainService {
     } catch (error) {
       console.error('Error migrating wallet:', error)
       throw error
+    }
+  }
+
+  async fetchStudentData(walletAddress: string): Promise<OnChainStudentData> {
+    try {
+      // Create read-only provider for querying
+      const readProvider = new ethers.BrowserProvider((window as any).ethereum)
+      const academy = new Contract(this.addresses.academy, ACADEMY_ABI, readProvider)
+      const composition = new Contract(this.addresses.composition, COMPOSITION_ABI, readProvider)
+      const diploma = new Contract(this.addresses.diploma, DIPLOMA_ABI, readProvider)
+
+      // Check if student is active and get canonical address
+      const [isActive, canonical] = await Promise.all([
+        academy.activeStudents(walletAddress).catch(() => false),
+        academy.canonicalStudent(walletAddress).catch(() => ethers.ZeroAddress),
+      ])
+
+      const canonAddr = canonical === ethers.ZeroAddress ? walletAddress : canonical
+
+      // Fetch academic records (iterate until no more records)
+      const grades: Grade[] = []
+      for (let i = 0; i < 10; i++) {
+        try {
+          const r = await academy.academicRecords(canonAddr, i)
+          if (Number(r.attempts) > 0) {
+            grades.push({
+              subjectId: i,
+              subjectName: SUBJECT_NAMES[i] ?? `Materia #${i}`,
+              score: Number(r.score),
+              approved: r.approved,
+              date: Number(r.approvalDate) > 0
+                ? new Date(Number(r.approvalDate) * 1000).toISOString().split('T')[0]
+                : '-',
+              professorId: Number(r.professorId),
+              status: 'CONFIRMED' as const,
+            })
+          }
+        } catch {
+          break
+        }
+      }
+
+      // Fetch compositions registered by this wallet
+      const count = Number(await composition.compositionCount().catch(() => 0n))
+      const compositions: Composition[] = []
+      for (let i = 1; i <= count && i <= 100; i++) {
+        try {
+          const c = await composition.registry(i)
+          if (c.author.toLowerCase() === walletAddress.toLowerCase()) {
+            compositions.push({
+              id: i,
+              title: c.title,
+              ipfsHash: c.ipfsHash,
+              author: c.author,
+              timestamp: new Date(Number(c.timestamp) * 1000)
+                .toISOString()
+                .replace('T', ' ')
+                .substring(0, 16),
+              isRegular: isActive,
+            })
+          }
+        } catch {
+          break
+        }
+      }
+
+      // Check if student has diploma
+      const diplomaTokenId = Number(await diploma.studentDiploma(walletAddress).catch(() => 0n))
+
+      return { isActive, grades, compositions, diplomaTokenId }
+    } catch (error) {
+      console.error('Error fetching student data:', error)
+      return { isActive: false, grades: [], compositions: [], diplomaTokenId: 0 }
     }
   }
 
