@@ -3,8 +3,16 @@ import { useAppStore } from '../store/appStore'
 import { blockchainService } from '../services/blockchain'
 import { Icons } from './Icons'
 
+const SEPOLIA_EXPLORER = 'https://sepolia.etherscan.io'
+const CONTRACT_ADDRESSES = {
+  academy: '0xa93939fb4698de788B51ec5f6620E0aD318b8A62',
+  diploma: '0x4E0A77e01F85c24d87c3605e1dFD09EaF62d1B00',
+  composition: '0x484FCeA1e42D9997b8E98c5007214c160BFD90D2',
+}
+
 export const Header = () => {
   const [isConnecting, setIsConnecting] = useState(false)
+  const [showExplorer, setShowExplorer] = useState(false)
   const {
     currentRole,
     setCurrentRole,
@@ -74,18 +82,79 @@ export const Header = () => {
       </div>
 
       <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-end">
-        {/* EVM Status widget */}
-        <div className="hidden lg:flex items-center gap-3 bg-slate-950/80 px-4 py-2 rounded-xl border border-slate-800 font-mono text-xs">
-          <div className="flex items-center gap-2">
+        {/* Blockchain Explorer Panel */}
+        <div className="relative group">
+          <button
+            onClick={() => setShowExplorer(!showExplorer)}
+            className="hidden md:flex items-center gap-2 bg-slate-950/80 px-3 py-2 rounded-xl border border-slate-800 hover:border-emerald-600 transition-all text-xs font-mono text-slate-400 hover:text-emerald-400"
+            title="Explorador de blockchain"
+          >
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-slate-400">Node:</span>
-            <span className="text-emerald-400 font-bold">Sepolia</span>
-          </div>
-          <div className="h-4 w-[1px] bg-slate-800"></div>
-          <div>
-            <span className="text-slate-400">Block:</span>
-            <span className="text-slate-200 font-bold ml-1">#{blockHeight}</span>
-          </div>
+            <span>Sepolia</span>
+            <span className="text-emerald-400 font-bold">#{blockHeight}</span>
+            <svg className={`w-3 h-3 transition-transform ${showExplorer ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </button>
+
+          {/* Dropdown Explorer */}
+          {showExplorer && (
+            <div className="absolute right-0 top-full mt-2 w-80 bg-slate-950 border border-emerald-500/40 rounded-xl shadow-2xl z-50 p-4 space-y-3">
+              <div className="text-xs font-bold text-emerald-400 pb-2 border-b border-slate-800">
+                📊 Blockchain Explorer - Sepolia
+              </div>
+
+              {/* Current Block Link */}
+              <a
+                href={`${SEPOLIA_EXPLORER}/block/${blockHeight}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-3 bg-slate-900 hover:bg-emerald-950/30 border border-slate-800 hover:border-emerald-500/40 rounded-lg transition-all text-left"
+              >
+                <div className="text-xs font-mono text-emerald-400 font-bold">Bloque Actual: #{blockHeight}</div>
+                <div className="text-[10px] text-slate-400 mt-1">↗ Ver en Etherscan</div>
+              </a>
+
+              {/* Contracts */}
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-2">Contratos Inteligentes:</div>
+              <div className="space-y-2">
+                {Object.entries(CONTRACT_ADDRESSES).map(([name, addr]) => (
+                  <a
+                    key={name}
+                    href={`${SEPOLIA_EXPLORER}/address/${addr}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/40 rounded text-[10px] font-mono text-slate-300 hover:text-blue-400 transition-all truncate"
+                    title={addr}
+                  >
+                    <div className="font-semibold capitalize mb-0.5">{name === 'academy' ? '🏫 Academy' : name === 'diploma' ? '🎓 Diploma' : '🎵 Composition'}</div>
+                    <div className="truncate text-slate-500">{addr}</div>
+                  </a>
+                ))}
+              </div>
+
+              {/* Quick Links */}
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-2">Enlaces Rápidos:</div>
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href={walletAddress && !walletAddress.startsWith('0xValentino') ? `${SEPOLIA_EXPLORER}/address/${walletAddress}` : SEPOLIA_EXPLORER}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 bg-slate-900 hover:bg-indigo-950/30 border border-slate-800 hover:border-indigo-500/40 rounded text-[10px] text-center font-mono transition-all"
+                >
+                  {walletAddress && !walletAddress.startsWith('0xValentino') ? '👤 Mi Wallet' : '🔍 Explorador'}
+                </a>
+                <a
+                  href={`${SEPOLIA_EXPLORER}/token/${CONTRACT_ADDRESSES.diploma}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 bg-slate-900 hover:bg-emerald-950/30 border border-slate-800 hover:border-emerald-500/40 rounded text-[10px] text-center font-mono transition-all"
+                >
+                  🏆 Diplomas (SBT)
+                </a>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Wallet Connect Button or Status */}

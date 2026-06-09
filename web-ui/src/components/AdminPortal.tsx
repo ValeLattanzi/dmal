@@ -310,12 +310,19 @@ export const AdminPortal = () => {
         <div className="glass rounded-2xl p-6 border border-slate-800 shadow-xl space-y-6">
           <div className="flex items-center gap-2 text-emerald-400 border-b border-slate-800 pb-3">
             <Icons.Award />
-            <h3 className="font-bold text-lg">Emitir Diploma SBT</h3>
+            <h3 className="font-bold text-lg">Emitir Diploma SBT (Soulbound Token)</h3>
           </div>
 
-          <p className="text-xs text-slate-400">
-            Emite un Soulbound Token diploma. El alumno debe haber completado todas las materias.
-          </p>
+          <div className="bg-emerald-950/20 border border-emerald-900/40 p-4 rounded-xl text-xs space-y-2 text-emerald-300">
+            <p className="font-bold">🎓 Flujo de Emisión de Diploma:</p>
+            <ol className="list-decimal list-inside space-y-1 text-[11px]">
+              <li><strong>Validación:</strong> Verifica que el alumno completó todas las materias de su currícula</li>
+              <li><strong>Generación:</strong> Genera un hash criptográfico único (legajo) basado en dirección + timestamp</li>
+              <li><strong>Acuñación:</strong> Emite un NFT no transferible (SBT) a la wallet del graduado</li>
+              <li><strong>Permanencia:</strong> El diploma queda grabado permanentemente en blockchain de Sepolia</li>
+              <li><strong>Recuperación:</strong> Si la wallet se compone, el diploma puede reemitirse en otra wallet manteniendo el historial</li>
+            </ol>
+          </div>
 
           <form onSubmit={handleMintDiploma} className="space-y-4">
             <div>
@@ -331,9 +338,23 @@ export const AdminPortal = () => {
                 required
               />
               <p className="text-[10px] text-slate-500 mt-1.5">
-                El hash del legajo se genera automáticamente.
+                El hash del legajo se genera automáticamente usando la dirección + timestamp.
               </p>
             </div>
+
+            {diplomaAddress.startsWith('0x') && diplomaAddress.length >= 15 && (
+              <div className="bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-4 space-y-2">
+                <p className="text-xs font-semibold text-emerald-400">Hash del Legajo (Prueba):</p>
+                <div className="bg-slate-950 rounded-lg p-3 font-mono text-[10px] text-emerald-300 break-all">
+                  {ethers.keccak256(
+                    ethers.solidityPacked(['address', 'uint256'], [diplomaAddress, Math.floor(Date.now() / 1000)])
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-500">
+                  Este hash se incluirá en el SBT como prueba criptográfica del legajo académico del graduado.
+                </p>
+              </div>
+            )}
 
             <button
               type="submit"

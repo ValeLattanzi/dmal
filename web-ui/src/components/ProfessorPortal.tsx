@@ -28,6 +28,11 @@ export const ProfessorPortal = () => {
     e.preventDefault()
     if (!scoreInput || isProcessing) return
 
+    if (!walletAddress || walletAddress.startsWith('0xValentino')) {
+      showToast('Conecta una wallet primero', 'error')
+      return
+    }
+
     const scoreVal = parseInt(scoreInput)
     if (scoreVal < 0 || scoreVal > 100) {
       showToast('La nota debe estar entre 0 y 100', 'error')
@@ -74,7 +79,7 @@ export const ProfessorPortal = () => {
       updateGradeStatus(subjectId, 'CONFIRMED')
       addLog(`Event Listener - Caught event 'GradeSubmitted' in block #${confirmedBlock}.`)
       addLog(`PostgreSQL - Student record for ${walletAddress.substring(0, 10)}... updated status from PENDING to CONFIRMED.`)
-      showToast('✔️ Transacción confirmada on-chain.', 'confirmed')
+      showToast(`✔️ Nota de ${scoreVal} registrada on-chain para ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`, 'confirmed')
       setScoreInput('')
     } catch (err: any) {
       const reason = err?.reason ?? err?.shortMessage ?? err?.message ?? 'Error desconocido'
@@ -100,16 +105,20 @@ export const ProfessorPortal = () => {
       <form onSubmit={handleGradeSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Dirección Wallet de Destino (Alumno)
+            Wallet del Alumno a Evaluar
           </label>
-          <input
-            type="text"
-            readOnly
-            value={walletAddress}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-indigo-300 font-mono focus:outline-none cursor-not-allowed"
-          />
+          {walletAddress && !walletAddress.startsWith('0xValentino') ? (
+            <div className="w-full bg-indigo-950/30 border border-indigo-500/40 rounded-xl px-4 py-3 text-sm text-indigo-300 font-mono flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+              <span>{walletAddress}</span>
+            </div>
+          ) : (
+            <div className="w-full bg-slate-950 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400 font-mono">
+              ⚠️ Conecta una wallet primero
+            </div>
+          )}
           <span className="text-[10px] text-slate-500 mt-1.5 block">
-            Esta dirección representa la identidad soberana del alumno de forma permanente en la red.
+            Se utilizará la wallet actualmente conectada. Esta dirección permanece registrada en blockchain de forma inmutable.
           </span>
         </div>
 

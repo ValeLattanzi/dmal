@@ -27,13 +27,14 @@ export const ValidatorPortal = () => {
 
   // Usa datos consultados si existen, sino datos del wallet conectado
   const displayData = queryData || {
-    isActive: grades.some((g) => g.approved),
+    isActive: grades.some((g) => g.approved && g.status === 'CONFIRMED'),
     grades,
     compositions: [],
     diplomaTokenId,
   }
 
   const displayAddress = queryAddress || walletAddress
+  const hasWalletConnected = walletAddress && !walletAddress.startsWith('0xValentino')
   const approvedCount = displayData.grades.filter((g) => g.approved && g.status === 'CONFIRMED').length
 
   const handleQueryWallet = async (e: React.FormEvent) => {
@@ -71,45 +72,87 @@ export const ValidatorPortal = () => {
 
   return (
     <div className="space-y-6">
-      {/* Búsqueda de Wallet */}
+      {/* Búsqueda de Wallet o mostrar conectada */}
       <div className="glass rounded-2xl p-6 border border-slate-800 shadow-xl space-y-4">
         <div className="flex items-center gap-2 text-blue-400 border-b border-slate-800 pb-3">
           <Icons.Shield />
-          <h3 className="font-bold text-lg">Consultar Wallet On-Chain</h3>
+          <h3 className="font-bold text-lg">
+            {hasWalletConnected ? 'Mi Diploma On-Chain' : 'Consultar Wallet On-Chain'}
+          </h3>
         </div>
 
-        <form onSubmit={handleQueryWallet} className="flex gap-2">
-          <input
-            type="text"
-            value={queryAddress}
-            onChange={(e) => setQueryAddress(e.target.value)}
-            placeholder="0x..."
-            className="flex-1 bg-slate-950 border border-slate-850 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono"
-          />
-          <button
-            type="submit"
-            disabled={isQuerying}
-            className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-3 px-6 rounded-xl transition-all text-sm flex items-center gap-2"
-          >
-            {isQuerying ? (
-              <>
-                <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                Consultando...
-              </>
-            ) : (
-              'Verificar On-Chain'
-            )}
-          </button>
-          {queryData && (
+        {hasWalletConnected ? (
+          <div className="flex items-center gap-3">
+            <div className="flex-1 bg-emerald-950/30 border border-emerald-500/40 rounded-xl px-4 py-3 text-sm text-emerald-300 font-mono">
+              {walletAddress}
+            </div>
+            <form onSubmit={handleQueryWallet} className="flex gap-2">
+              <input
+                type="text"
+                value={queryAddress}
+                onChange={(e) => setQueryAddress(e.target.value)}
+                placeholder="Consultar otra wallet..."
+                className="bg-slate-950 border border-slate-850 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono w-64"
+              />
+              <button
+                type="submit"
+                disabled={isQuerying || !queryAddress.trim()}
+                className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-3 px-4 rounded-xl transition-all text-sm flex items-center gap-2 whitespace-nowrap"
+              >
+                {isQuerying ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Consultando...
+                  </>
+                ) : (
+                  'Consultar'
+                )}
+              </button>
+              {queryData && (
+                <button
+                  type="button"
+                  onClick={handleClearQuery}
+                  className="bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold py-3 px-4 rounded-xl transition-all text-sm"
+                >
+                  Limpiar
+                </button>
+              )}
+            </form>
+          </div>
+        ) : (
+          <form onSubmit={handleQueryWallet} className="flex gap-2">
+            <input
+              type="text"
+              value={queryAddress}
+              onChange={(e) => setQueryAddress(e.target.value)}
+              placeholder="0x..."
+              className="flex-1 bg-slate-950 border border-slate-850 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono"
+            />
             <button
-              type="button"
-              onClick={handleClearQuery}
-              className="bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold py-3 px-4 rounded-xl transition-all text-sm"
+              type="submit"
+              disabled={isQuerying}
+              className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-3 px-6 rounded-xl transition-all text-sm flex items-center gap-2"
             >
-              Limpiar
+              {isQuerying ? (
+                <>
+                  <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Consultando...
+                </>
+              ) : (
+                'Verificar On-Chain'
+              )}
             </button>
-          )}
-        </form>
+            {queryData && (
+              <button
+                type="button"
+                onClick={handleClearQuery}
+                className="bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold py-3 px-4 rounded-xl transition-all text-sm"
+              >
+                Limpiar
+              </button>
+            )}
+          </form>
+        )}
       </div>
 
       {/* Results Grid */}
