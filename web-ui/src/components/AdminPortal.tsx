@@ -3,6 +3,7 @@ import { useAppStore } from '../store/appStore'
 import { blockchainService } from '../services/blockchain'
 import { ethers } from 'ethers'
 import { Icons } from './Icons'
+import { etherscanLinks, truncateHash } from '../utils/etherscan'
 
 export const AdminPortal = () => {
   const [activeTab, setActiveTab] = useState<'curriculum' | 'enroll' | 'diploma' | 'recovery'>('curriculum')
@@ -51,8 +52,13 @@ export const AdminPortal = () => {
 
       const receipt = await blockchainService.defineCurriculum(cid, ids)
 
-      showToast(`✔️ Currícula definida en bloque #${receipt.blockNumber}`, 'confirmed')
+      showToast(
+        `✔️ Currícula definida en bloque #${receipt.blockNumber}`,
+        'confirmed'
+      )
       addLog(`ADMIN - Currícula #${cid} definida en blockchain. Evento CurriculumDefined emitido.`)
+      addLog(`📋 TX: ${receipt.hash} | Block: #${receipt.blockNumber}`)
+      addLog(`🔗 Verificar: ${etherscanLinks.tx(receipt.hash)}`)
 
       setCareerId('')
       setSubjectIds('')
@@ -93,6 +99,8 @@ export const AdminPortal = () => {
 
       showToast(`✔️ Alumno inscrito en bloque #${receipt.blockNumber}`, 'confirmed')
       addLog(`ADMIN - Alumno ${enrollAddress.substring(0, 10)}... inscrito en carrera #${cid}. Evento CareerAssigned emitido.`)
+      addLog(`📋 TX: ${truncateHash(receipt.hash)} | Block: #${receipt.blockNumber}`)
+      addLog(`🔗 Verificar: ${etherscanLinks.tx(receipt.hash)}`)
 
       setEnrollAddress('')
       setEnrollCareerId('')
@@ -129,8 +137,13 @@ export const AdminPortal = () => {
 
       const receipt = await blockchainService.mintDiploma(diplomaAddress, legajoHash)
 
-      showToast(`✔️ Diploma SBT emitido en bloque #${receipt.blockNumber}`, 'confirmed')
+      showToast(
+        `✔️ Diploma SBT emitido en bloque #${receipt.blockNumber}`,
+        'confirmed'
+      )
       addLog(`ADMIN - Diploma SBT emitido a ${diplomaAddress.substring(0, 10)}... Evento DiplomaIssued emitido.`)
+      addLog(`📋 TX: ${truncateHash(receipt.hash)} | Block: #${receipt.blockNumber}`)
+      addLog(`🔗 Verificar: ${etherscanLinks.tx(receipt.hash)}`)
 
       setDiplomaAddress('')
     } catch (err: any) {

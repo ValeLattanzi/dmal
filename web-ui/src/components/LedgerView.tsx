@@ -1,5 +1,6 @@
 import { useAppStore } from '../store/appStore'
 import { Icons } from './Icons'
+import { etherscanLinks, truncateHash } from '../utils/etherscan'
 
 export const LedgerView = () => {
   const { transactions, clearHistory, walletAddress } = useAppStore()
@@ -65,9 +66,26 @@ export const LedgerView = () => {
 
               <div className="pt-2 border-t border-slate-850/60 flex justify-between items-center text-[10px] text-slate-500 font-mono">
                 <span>EVM Hash:</span>
-                <span className="text-indigo-300 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-850 text-[10px]">
-                  {tx.txHash}
-                </span>
+                {tx.txHash && !tx.txHash.startsWith('0x') ? (
+                  // Mock hash (no clickeable)
+                  <span className="text-indigo-300 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-850 text-[10px]">
+                    {tx.txHash}
+                  </span>
+                ) : (
+                  // Real tx hash (clickeable)
+                  <a
+                    href={etherscanLinks.tx(tx.txHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-400 hover:text-emerald-300 bg-slate-950 px-1.5 py-0.5 rounded border border-emerald-500/30 hover:border-emerald-500/60 text-[10px] transition-all flex items-center gap-1 group"
+                    title={`Ver en Etherscan: ${tx.txHash}`}
+                  >
+                    {truncateHash(tx.txHash, 8, 6)}
+                    <svg className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
               </div>
             </div>
           ))

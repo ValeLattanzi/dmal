@@ -3,6 +3,7 @@ import { useAppStore } from '../store/appStore'
 import { blockchainService } from '../services/blockchain'
 import { ethers } from 'ethers'
 import { Icons } from './Icons'
+import { etherscanLinks, truncateHash } from '../utils/etherscan'
 
 export const StudentPortal = () => {
   const [compTitle, setCompTitle] = useState('')
@@ -82,6 +83,8 @@ export const StudentPortal = () => {
       setCurrentBlock(commitBlock)
 
       addLog(`Event Listener - CompositionCommitted in block #${commitBlock}`)
+      addLog(`📋 TX: ${truncateHash(receipt.hash)} | Block: #${commitBlock}`)
+      addLog(`🔗 Verificar: ${etherscanLinks.tx(receipt.hash)}`)
       showToast(`✔️ Commit confirmado en bloque #${commitBlock}. Aguardando siguiente bloque...`, 'success')
     } catch (err: any) {
       const reason = err?.reason ?? err?.shortMessage ?? err?.message ?? 'Error desconocido'
@@ -138,6 +141,8 @@ export const StudentPortal = () => {
       })
 
       addLog(`Event Listener - CompositionRegistered in block #${confirmedBlock}`)
+      addLog(`📋 TX: ${truncateHash(receipt.hash)} | Block: #${confirmedBlock}`)
+      addLog(`🔗 Verificar: ${etherscanLinks.tx(receipt.hash)}`)
       showToast('✔️ Propiedad intelectual grabada permanentemente en la EVM.', 'confirmed')
 
       setPendingCommit(null)

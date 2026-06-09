@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import { blockchainService } from '../services/blockchain'
 import { Icons } from './Icons'
+import { etherscanLinks, truncateHash } from '../utils/etherscan'
 
 const SUBJECTS = {
   '1': 'Composición Musical I',
@@ -79,6 +80,8 @@ export const ProfessorPortal = () => {
       updateGradeStatus(subjectId, 'CONFIRMED')
       addLog(`Event Listener - Caught event 'GradeSubmitted' in block #${confirmedBlock}.`)
       addLog(`PostgreSQL - Student record for ${walletAddress.substring(0, 10)}... updated status from PENDING to CONFIRMED.`)
+      addLog(`📋 TX: ${truncateHash(receipt.hash)} | Block: #${confirmedBlock}`)
+      addLog(`🔗 Verificar: ${etherscanLinks.tx(receipt.hash)}`)
       showToast(`✔️ Nota de ${scoreVal} registrada on-chain para ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`, 'confirmed')
       setScoreInput('')
     } catch (err: any) {
