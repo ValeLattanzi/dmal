@@ -312,6 +312,109 @@ export class BlockchainService {
   getContractAddresses() {
     return this.addresses
   }
+
+  async getStudentCareer(studentAddress: string) {
+    if (!this.contracts.academy) throw new Error('Academy contract not initialized')
+    try {
+      const careerId = Number(await this.contracts.academy.studentCareer(studentAddress))
+      return careerId
+    } catch (error) {
+      console.error('Error getting student career:', error)
+      return 0
+    }
+  }
+
+  async getGradesByProfessor(studentAddress: string, professorId: number) {
+    if (!this.contracts.academy) throw new Error('Academy contract not initialized')
+    try {
+      const readProvider = new ethers.BrowserProvider((window as any).ethereum)
+      const academy = new Contract(this.addresses.academy, ACADEMY_ABI, readProvider)
+      const canonical = await academy.canonicalStudent(studentAddress).catch(() => studentAddress)
+
+      const grades: Grade[] = []
+      for (let i = 0; i < 10; i++) {
+        try {
+          const r = await academy.academicRecords(canonical, i)
+          if (Number(r.attempts) > 0 && Number(r.professorId) === professorId) {
+            grades.push({
+              subjectId: i,
+              subjectName: SUBJECT_NAMES[i] ?? `Materia #${i}`,
+              score: Number(r.score),
+              approved: r.approved,
+              date: Number(r.approvalDate) > 0
+                ? new Date(Number(r.approvalDate) * 1000).toISOString().split('T')[0]
+                : '-',
+              professorId: Number(r.professorId),
+              status: 'CONFIRMED' as const,
+            })
+          }
+        } catch {
+          break
+        }
+      }
+      return grades
+    } catch (error) {
+      console.error('Error getting grades by professor:', error)
+      return []
+    }
+  }
+
+  async getAllCompositions() {
+    if (!this.contracts.composition) throw new Error('Composition contract not initialized')
+    try {
+      const readProvider = new ethers.BrowserProvider((window as any).ethereum)
+      const composition = new Contract(this.addresses.composition, COMPOSITION_ABI, readProvider)
+
+      const count = Number(await composition.compositionCount().catch(() => 0n))
+      const compositions: Composition[] = []
+      for (let i = 1; i <= count && i <= 200; i++) {
+        try {
+          const c = await composition.registry(i)
+          compositions.push({
+            id: i,
+            title: c.title,
+            ipfsHash: c.ipfsHash,
+            author: c.author,
+            timestamp: new Date(Number(c.timestamp) * 1000)
+              .toISOString()
+              .replace('T', ' ')
+              .substring(0, 16),
+            isRegular: true,
+          })
+        } catch {
+          break
+        }
+      }
+      return compositions
+    } catch (error) {
+      console.error('Error getting all compositions:', error)
+      return []
+    }
+  }
+
+  async getDiplomaInfo(studentAddress: string) {
+    if (!this.contracts.diploma) throw new Error('Diploma contract not initialized')
+    try {
+      const readProvider = new ethers.BrowserProvider((window as any).ethereum)
+      const diploma = new Contract(this.addresses.diploma, DIPLOMA_ABI, readProvider)
+      const tokenId = Number(await diploma.studentDiploma(studentAddress).catch(() => 0n))
+      return { tokenId, hasDiploma: tokenId > 0 }
+    } catch (error) {
+      console.error('Error getting diploma info:', error)
+      return { tokenId: 0, hasDiploma: false }
+    }
+  }
+
+  async getCanonicalStudent(walletAddress: string) {
+    if (!this.contracts.academy) throw new Error('Academy contract not initialized')
+    try {
+      const canonical = await this.contracts.academy.canonicalStudent(walletAddress)
+      return canonical === ethers.ZeroAddress ? walletAddress : canonical
+    } catch (error) {
+      console.error('Error getting canonical student:', error)
+      return walletAddress
+    }
+  }
 }
 
 export const blockchainService = new BlockchainService()

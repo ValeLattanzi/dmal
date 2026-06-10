@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import { blockchainService } from '../services/blockchain'
 import { Icons } from './Icons'
+import { AuditDashboard } from './AuditDashboard'
 
 const SEPOLIA_EXPLORER = 'https://sepolia.etherscan.io'
 const CONTRACT_ADDRESSES = {
@@ -13,6 +14,7 @@ const CONTRACT_ADDRESSES = {
 export const Header = () => {
   const [isConnecting, setIsConnecting] = useState(false)
   const [showExplorer, setShowExplorer] = useState(false)
+  const [showAudit, setShowAudit] = useState(false)
   const {
     currentRole,
     setCurrentRole,
@@ -192,6 +194,15 @@ export const Header = () => {
           </button>
         )}
 
+        {/* Audit Dashboard Button */}
+        <button
+          onClick={() => setShowAudit(true)}
+          className="hidden md:flex items-center gap-2 bg-emerald-950/50 hover:bg-emerald-900/50 border border-emerald-800/50 hover:border-emerald-600/80 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-400 transition-all"
+          title="Abrir Dashboard de Auditoría"
+        >
+          📊 Auditoría
+        </button>
+
         {/* Role Selector */}
         <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 w-full sm:w-auto">
           <span className="text-xs text-slate-500 font-medium px-2 hidden sm:flex items-center gap-1">
@@ -209,6 +220,9 @@ export const Header = () => {
           </select>
         </div>
       </div>
+
+      {/* Audit Dashboard Modal */}
+      {showAudit && <AuditDashboard onClose={() => setShowAudit(false)} />}
     </header>
   )
 }
