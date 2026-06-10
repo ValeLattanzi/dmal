@@ -17,10 +17,8 @@ export const ProfessorPortal = () => {
 
   const {
     walletAddress,
-    addGrade,
     updateGradeStatus,
     addTransaction,
-    updateTransactionStatus,
     addLog,
     showToast,
   } = useAppStore()
@@ -41,42 +39,26 @@ export const ProfessorPortal = () => {
     }
 
     setIsProcessing(true)
-    const txHash = '0x' + Array.from({ length: 40 }, () =>
-      Math.floor(Math.random() * 16).toString(16)
-    ).join('')
-    const shortTx = txHash.substring(0, 10) + '...' + txHash.substring(36)
-    const tempTxId = Date.now()
     const subjectId = parseInt(selectedSubject)
 
     addLog(`REST - POST /api/v1/academic/grades - Received request for student ${walletAddress.substring(0, 12)}...`)
     addLog(`BlockchainService - Initiating EVM Transaction for submitGrade(...) with credentials KMS_DOCENTE_14`)
 
-    addTransaction({
-      id: tempTxId,
-      type: 'Carga de Nota',
-      detail: `${SUBJECTS[selectedSubject as keyof typeof SUBJECTS]}: ${scoreVal}`,
-      status: 'PENDING_ON_CHAIN',
-      txHash: shortTx,
-      block: 'Pendiente...',
-    })
-
-    addGrade({
-      subjectId,
-      subjectName: SUBJECTS[selectedSubject as keyof typeof SUBJECTS],
-      score: scoreVal,
-      approved: scoreVal >= 60,
-      date: new Date().toISOString().split('T')[0],
-      professorId: 14,
-      status: 'PENDING',
-    })
-
-    showToast('Spring Boot: Transacción 202 Aceptada. Esperando confirmación EVM...', 'success')
+    showToast('Spring Boot: Transacción 202 Aceptada. Esperando confirmación EVM...', 'info')
 
     try {
       const receipt = await blockchainService.submitGrade(walletAddress, subjectId, scoreVal, 14)
       const confirmedBlock = receipt.blockNumber
 
-      updateTransactionStatus(tempTxId, 'CONFIRMED')
+      addTransaction({
+        id: Date.now(),
+        type: 'Carga de Nota',
+        detail: `${SUBJECTS[selectedSubject as keyof typeof SUBJECTS]}: ${scoreVal}`,
+        status: 'CONFIRMED',
+        txHash: receipt.hash,
+        block: confirmedBlock,
+      })
+
       updateGradeStatus(subjectId, 'CONFIRMED')
       addLog(`Event Listener - Caught event 'GradeSubmitted' in block #${confirmedBlock}.`)
       addLog(`PostgreSQL - Student record for ${walletAddress.substring(0, 10)}... updated status from PENDING to CONFIRMED.`)

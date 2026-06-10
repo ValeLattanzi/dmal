@@ -415,6 +415,47 @@ export class BlockchainService {
       return walletAddress
     }
   }
+
+
+  async getLatestGradeSubmissions(limit: number = 20) {
+    if (!this.contracts.academy) throw new Error('Academy contract not initialized')
+    try {
+      const readProvider = new ethers.BrowserProvider((window as any).ethereum)
+      const latestBlock = await readProvider.getBlockNumber()
+
+      const logs = await readProvider.getLogs({
+        address: this.addresses.academy,
+        topics: [ethers.id('GradeSubmitted(address,uint256,uint8,uint16)')],
+        fromBlock: Math.max(0, latestBlock - 10000),
+        toBlock: latestBlock,
+      })
+
+      return logs.slice(-limit)
+    } catch (error) {
+      console.error('Error getting grade submissions:', error)
+      return []
+    }
+  }
+
+  async getLatestCompositionRegistrations(limit: number = 20) {
+    if (!this.contracts.composition) throw new Error('Composition contract not initialized')
+    try {
+      const readProvider = new ethers.BrowserProvider((window as any).ethereum)
+      const latestBlock = await readProvider.getBlockNumber()
+
+      const logs = await readProvider.getLogs({
+        address: this.addresses.composition,
+        topics: [ethers.id('CompositionRegistered(address,uint256,string)')],
+        fromBlock: Math.max(0, latestBlock - 10000),
+        toBlock: latestBlock,
+      })
+
+      return logs.slice(-limit)
+    } catch (error) {
+      console.error('Error getting composition registrations:', error)
+      return []
+    }
+  }
 }
 
 export const blockchainService = new BlockchainService()

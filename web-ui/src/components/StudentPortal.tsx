@@ -23,7 +23,6 @@ export const StudentPortal = () => {
     grades,
     addComposition,
     addTransaction,
-    updateTransactionStatus,
     addLog,
     showToast,
   } = useAppStore()
@@ -104,23 +103,8 @@ export const StudentPortal = () => {
     setStep('revealing')
 
     try {
-      const txHashTemp = '0x' + Array.from({ length: 40 }, () =>
-        Math.floor(Math.random() * 16).toString(16)
-      ).join('')
-      const shortTx = txHashTemp.substring(0, 10) + '...' + txHashTemp.substring(36)
-      const tempTxId = Date.now()
-
       addLog(`CompositionRegistry - Revealing composition: "${pendingCommit.title}"`)
       showToast('Revelando y registrando en blockchain...', 'info')
-
-      addTransaction({
-        id: tempTxId,
-        type: 'Registro IP',
-        detail: `IPFS: ${pendingCommit.title}`,
-        status: 'PENDING_ON_CHAIN',
-        txHash: shortTx,
-        block: 'Pendiente...',
-      })
 
       const receipt = await blockchainService.registerComposition(
         pendingCommit.ipfsHash,
@@ -130,7 +114,15 @@ export const StudentPortal = () => {
 
       const confirmedBlock = receipt.blockNumber
 
-      updateTransactionStatus(tempTxId, 'CONFIRMED')
+      addTransaction({
+        id: Date.now(),
+        type: 'Registro IP',
+        detail: `IPFS: ${pendingCommit.title}`,
+        status: 'CONFIRMED',
+        txHash: receipt.hash,
+        block: confirmedBlock,
+      })
+
       addComposition({
         id: Math.random(),
         title: pendingCommit.title,

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useAppStore } from '../store/appStore'
 import { blockchainService } from '../services/blockchain'
 import { etherscanLinks, truncateHash } from '../utils/etherscan'
 import type { Grade, Composition } from '../types'
@@ -20,6 +19,8 @@ export const AuditDashboard = ({ onClose }: { onClose: () => void }) => {
 
   // Overview tab state
   const [allCompositions, setAllCompositions] = useState<Composition[]>([])
+  const [gradeEvents, setGradeEvents] = useState<any[]>([])
+  const [compositionEvents, setCompositionEvents] = useState<any[]>([])
 
   // Students tab state
   const [studentSearch, setStudentSearch] = useState('')
@@ -34,19 +35,27 @@ export const AuditDashboard = ({ onClose }: { onClose: () => void }) => {
   const [legajoSearch, setLegajoSearch] = useState('')
   const [legajoResults, setLegajoResults] = useState<Composition[]>([])
 
-  const { transactions } = useAppStore()
-
-  // Load all compositions on mount for overview
+  // Load blockchain data on mount
   useEffect(() => {
-    if (activeTab === 'overview' && allCompositions.length === 0) {
-      loadAllCompositions()
+    if (activeTab === 'overview') {
+      loadBlockchainData()
     }
   }, [activeTab])
 
-  const loadAllCompositions = async () => {
+  const loadBlockchainData = async () => {
     setIsLoading(true)
-    const comps = await blockchainService.getAllCompositions()
-    setAllCompositions(comps)
+    try {
+      const [comps, grades, compos] = await Promise.all([
+        blockchainService.getAllCompositions(),
+        blockchainService.getLatestGradeSubmissions(50),
+        blockchainService.getLatestCompositionRegistrations(50),
+      ])
+      setAllCompositions(comps)
+      setGradeEvents(grades)
+      setCompositionEvents(compos)
+    } catch (error) {
+      console.error('Error loading blockchain data:', error)
+    }
     setIsLoading(false)
   }
 
@@ -153,30 +162,28 @@ export const AuditDashboard = ({ onClose }: { onClose: () => void }) => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
                   <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                    Total Transacciones
+                    Notas Registradas
                   </div>
-                  <div className="text-3xl font-bold text-emerald-400">{transactions.length}</div>
-                </div>
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
-                  <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                    Confirmadas
-                  </div>
-                  <div className="text-3xl font-bold text-blue-400">
-                    {transactions.filter((t) => t.status === 'CONFIRMED').length}
-                  </div>
+                  <div className="text-3xl font-bold text-emerald-400">{gradeEvents.length}</div>
                 </div>
                 <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
                   <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
                     Composiciones
                   </div>
-                  <div className="text-3xl font-bold text-cyan-400">{allCompositions.length}</div>
+                  <div className="text-3xl font-bold text-cyan-400">{compositionEvents.length}</div>
                 </div>
                 <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
                   <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                    Cargando...
+                    Total Legajos
+                  </div>
+                  <div className="text-3xl font-bold text-blue-400">{allCompositions.length}</div>
+                </div>
+                <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                  <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                    Estado
                   </div>
                   <button
-                    onClick={loadAllCompositions}
+                    onClick={loadBlockchainData}
                     disabled={isLoading}
                     className="text-emerald-400 hover:text-emerald-300 text-sm font-semibold disabled:text-slate-500"
                   >
@@ -186,37 +193,59 @@ export const AuditDashboard = ({ onClose }: { onClose: () => void }) => {
               </div>
 
               <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
-                <h3 className="text-lg font-bold text-slate-200 mb-4">Transacciones Confirmadas</h3>
+                <h3 className="text-lg font-bold text-slate-200 mb-4">📝 Últimas Notas Registradas</h3>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {transactions.filter((t) => t.status === 'CONFIRMED').length === 0 ? (
-                    <p className="text-slate-500 text-sm">No hay transacciones confirmadas aún.</p>
+                  {gradeEvents.length === 0 ? (
+                    <p className="text-slate-500 text-sm">No hay notas registradas aún en blockchain.</p>
                   ) : (
-                    transactions
-                      .filter((t) => t.status === 'CONFIRMED')
-                      .map((tx) => (
-                        <div
-                          key={tx.id}
-                          className="flex justify-between items-center text-xs p-3 bg-slate-900 rounded-lg border border-slate-800"
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            <span className="font-semibold text-emerald-400">{tx.type}</span>
-                            <span className="text-slate-500">{tx.detail}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-400">Bloque #{tx.block}</span>
-                            {tx.txHash && tx.txHash.startsWith('0x') && (
-                              <a
-                                href={etherscanLinks.tx(tx.txHash)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-emerald-400 hover:text-emerald-300 underline"
-                              >
-                                {truncateHash(tx.txHash, 6, 4)}
-                              </a>
-                            )}
-                          </div>
+                    gradeEvents.slice(-10).map((event, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center text-xs p-3 bg-slate-900 rounded-lg border border-slate-800"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <span className="font-semibold text-emerald-400">Carga de Nota</span>
+                          <span className="text-slate-500">Bloque #{event.blockNumber}</span>
                         </div>
-                      ))
+                        <a
+                          href={etherscanLinks.tx(event.transactionHash)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-400 hover:text-emerald-300 underline"
+                        >
+                          {truncateHash(event.transactionHash, 6, 4)}
+                        </a>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-slate-200 mb-4">🎵 Últimas Composiciones Registradas</h3>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {compositionEvents.length === 0 ? (
+                    <p className="text-slate-500 text-sm">No hay composiciones registradas aún en blockchain.</p>
+                  ) : (
+                    compositionEvents.slice(-10).map((event, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center text-xs p-3 bg-slate-900 rounded-lg border border-slate-800"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <span className="font-semibold text-cyan-400">Registro IP</span>
+                          <span className="text-slate-500">Bloque #{event.blockNumber}</span>
+                        </div>
+                        <a
+                          href={etherscanLinks.tx(event.transactionHash)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-cyan-400 hover:text-cyan-300 underline"
+                        >
+                          {truncateHash(event.transactionHash, 6, 4)}
+                        </a>
+                      </div>
+                    ))
                   )}
                 </div>
               </div>

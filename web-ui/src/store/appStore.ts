@@ -24,6 +24,7 @@ interface Store extends AppState {
   transactions: Transaction[]
   addTransaction: (tx: Transaction) => void
   updateTransactionStatus: (txId: string | number, status: string) => void
+  updateTransactionHash: (txId: string | number, txHash: string) => void
 
   // Logs
   logs: string[]
@@ -119,6 +120,12 @@ export const useAppStore = create<Store>((set) => ({
     set((state) => ({
       transactions: state.transactions.map((t) =>
         t.id === txId ? { ...t, status: status as Transaction['status'] } : t
+      ),
+    })),
+  updateTransactionHash: (txId, txHash) =>
+    set((state) => ({
+      transactions: state.transactions.map((t) =>
+        t.id === txId ? { ...t, txHash } : t
       ),
     })),
 
