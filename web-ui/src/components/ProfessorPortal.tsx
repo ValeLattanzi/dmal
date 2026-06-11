@@ -21,7 +21,17 @@ export const ProfessorPortal = () => {
     addTransaction,
     addLog,
     showToast,
+    submissions,
+    professorAssignments,
+    markSubmissionGraded,
   } = useAppStore()
+
+  const pendingSubmissions = submissions.filter((s) => s.status === 'pending')
+
+  const handleSelectSubmission = (subjectId: number) => {
+    setSelectedSubject(String(subjectId))
+    document.getElementById('grade-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const handleGradeSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,8 +57,14 @@ export const ProfessorPortal = () => {
     showToast('Spring Boot: Transacción 202 Aceptada. Esperando confirmación EVM...', 'info')
 
     try {
-      const receipt = await blockchainService.submitGrade(walletAddress, subjectId, scoreVal, 14)
+      const professorId = professorAssignments[subjectId]?.id ?? 14
+      const receipt = await blockchainService.submitGrade(walletAddress, subjectId, scoreVal, professorId)
       const confirmedBlock = receipt.blockNumber
+
+      const pendingForSubject = pendingSubmissions.find((s) => s.subjectId === subjectId)
+      if (pendingForSubject) {
+        markSubmissionGraded(pendingForSubject.id, scoreVal)
+      }
 
       addTransaction({
         id: Date.now(),
@@ -76,7 +92,47 @@ export const ProfessorPortal = () => {
   }
 
   return (
-    <div className="glass rounded-2xl p-6 border border-slate-800 shadow-xl space-y-6">
+    <div className="space-y-6">
+      {/* PENDING SUBMISSIONS */}
+      {pendingSubmissions.length > 0 && (
+        <div className="glass rounded-2xl p-6 border border-slate-800 shadow-xl space-y-4">
+          <div className="flex items-center gap-2 text-amber-400 border-b border-slate-800 pb-4">
+            <Icons.Clock />
+            <h3 className="font-bold text-lg">Trabajos Pendientes de Corrección</h3>
+          </div>
+          <div className="space-y-3">
+            {pendingSubmissions.map((sub) => (
+              <div
+                key={sub.id}
+                className="bg-slate-950 border border-slate-850 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-slate-200">{sub.title}</p>
+                  <p className="text-xs text-slate-400">{sub.subjectName} · {sub.fileName}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={sub.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg transition-all"
+                  >
+                    Ver PDF
+                  </a>
+                  <button
+                    onClick={() => handleSelectSubmission(sub.subjectId)}
+                    className="text-xs bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-2 rounded-lg transition-all"
+                  >
+                    Calificar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+    <div id="grade-form" className="glass rounded-2xl p-6 border border-slate-800 shadow-xl space-y-6">
       <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <div className="flex items-center gap-2 text-indigo-400">
           <Icons.BookOpen />
@@ -179,6 +235,7 @@ export const ProfessorPortal = () => {
           )}
         </button>
       </form>
+    </div>
     </div>
   )
 }

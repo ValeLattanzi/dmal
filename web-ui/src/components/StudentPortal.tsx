@@ -5,6 +5,12 @@ import { ethers } from 'ethers'
 import { Icons } from './Icons'
 import { etherscanLinks, truncateHash } from '../utils/etherscan'
 
+const SUBJECTS: Record<number, string> = {
+  1: 'Composición Musical I',
+  2: 'Contrapunto Avanzado',
+  3: 'Audioperceptiva V',
+}
+
 export const StudentPortal = () => {
   const [compTitle, setCompTitle] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
@@ -25,9 +31,76 @@ export const StudentPortal = () => {
     addTransaction,
     addLog,
     showToast,
+    professorAssignments,
+    addSubmission,
   } = useAppStore()
 
   const isRegular = grades.some((g) => g.approved && g.status === 'CONFIRMED')
+
+  // === Trabajo Práctico (TP) submission state ===
+  const [tpSubjectId, setTpSubjectId] = useState('1')
+  const [tpTitle, setTpTitle] = useState('')
+  const [tpFile, setTpFile] = useState<{ name: string; url: string } | null>(null)
+
+  // === Diploma eligibility state ===
+  const [isCheckingEligibility, setIsCheckingEligibility] = useState(false)
+  const [isEligible, setIsEligible] = useState<boolean | null>(null)
+  const approvedCount = grades.filter((g) => g.approved && g.status === 'CONFIRMED').length
+
+  useEffect(() => {
+    if (!walletAddress || walletAddress.startsWith('0xValentino')) return
+    let cancelled = false
+    setIsCheckingEligibility(true)
+    blockchainService
+      .hasCompletedAllSubjects(walletAddress)
+      .then((completed) => {
+        if (!cancelled) setIsEligible(completed)
+      })
+      .catch(() => {
+        if (!cancelled) setIsEligible(null)
+      })
+      .finally(() => {
+        if (!cancelled) setIsCheckingEligibility(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [walletAddress, grades])
+
+  const handleTpFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.type !== 'application/pdf') {
+      showToast('Por favor selecciona un archivo PDF', 'error')
+      return
+    }
+    setTpFile({ name: file.name, url: URL.createObjectURL(file) })
+  }
+
+  const handleSubmitTp = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!tpTitle.trim() || !tpFile) {
+      showToast('Completa el título y adjunta el PDF del trabajo', 'error')
+      return
+    }
+
+    const subjectId = parseInt(tpSubjectId)
+    addSubmission({
+      id: `${Date.now()}`,
+      subjectId,
+      subjectName: SUBJECTS[subjectId],
+      title: tpTitle.trim(),
+      fileName: tpFile.name,
+      fileUrl: tpFile.url,
+      status: 'pending',
+    })
+
+    addLog(`ALUMNO - Entrega de TP "${tpTitle.trim()}" (${tpFile.name}) para "${SUBJECTS[subjectId]}" enviada al docente.`)
+    showToast('✔️ Trabajo práctico entregado. Pendiente de corrección docente.', 'success')
+
+    setTpTitle('')
+    setTpFile(null)
+  }
 
   const generateIPFSHash = () =>
     'Qm' + Array.from({ length: 44 }, () =>
@@ -154,7 +227,113 @@ export const StudentPortal = () => {
   const canReveal = blocksUntilReveal <= 0 && step === 'waiting'
 
   return (
-    <div className="glass rounded-2xl p-6 border border-slate-800 shadow-xl space-y-6">
+    <div className="space-y-6">
+      {/* TP SUBMISSION */}
+      <div className="glass rounded-2xl p-6 border border-slate-800 shadow-xl space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex items-center gap-2 text-indigo-400">
+            <Icons.BookOpen />
+            <h3 className="font-bold text-lg">Entrega de Trabajo Práctico</h3>
+          </div>
+          <span className="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2.5 py-1 rounded-full font-mono">
+            Solo Visual / Off-Chain
+          </span>
+        </div>
+
+        <form onSubmit={handleSubmitTp} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Materia
+            </label>
+            <select
+              value={tpSubjectId}
+              onChange={(e) => setTpSubjectId(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+            >
+              {Object.entries(SUBJECTS).map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                  {professorAssignments[parseInt(id)] ? ` — Docente: ${professorAssignments[parseInt(id)].name}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Título del Trabajo
+            </label>
+            <input
+              type="text"
+              value={tpTitle}
+              onChange={(e) => setTpTitle(e.target.value)}
+              placeholder="Ej: Análisis armónico - Unidad 3"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Adjuntar PDF
+            </label>
+            <div className="border border-dashed border-slate-800 bg-slate-950 rounded-xl p-5 text-center space-y-2">
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={handleTpFileChange}
+                className="block w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 file:cursor-pointer cursor-pointer"
+              />
+              {tpFile && (
+                <span className="text-xs text-emerald-400 font-semibold block">📎 {tpFile.name}</span>
+              )}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-indigo-600/15 flex justify-center items-center gap-2 text-sm"
+          >
+            Entregar Trabajo Práctico
+          </button>
+        </form>
+      </div>
+
+      {/* GRADUATION STATUS */}
+      <div className="glass rounded-2xl p-6 border border-slate-800 shadow-xl space-y-4">
+        <div className="flex items-center gap-2 text-emerald-400 border-b border-slate-800 pb-4">
+          <Icons.Award />
+          <h3 className="font-bold text-lg">Estado de Graduación</h3>
+        </div>
+
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-slate-400">Materias aprobadas:</span>
+          <span className="font-mono font-bold text-slate-200">{approvedCount} / 3</span>
+        </div>
+
+        {isCheckingEligibility && (
+          <p className="text-xs text-slate-500">Consultando hasCompletedAllSubjects() en la EVM...</p>
+        )}
+
+        {isEligible && (
+          <div className="bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-4 space-y-2">
+            <p className="text-sm font-bold text-emerald-400">🎓 ¡Elegible para Diploma!</p>
+            <p className="text-xs text-slate-400">
+              Completaste todas las materias de tu currícula. Compartí esta wallet con Administración para emitir tu Diploma SBT:
+            </p>
+            <div className="bg-slate-950 rounded-lg p-3 font-mono text-[11px] text-emerald-300 break-all">
+              {walletAddress}
+            </div>
+          </div>
+        )}
+
+        {isEligible === false && (
+          <p className="text-xs text-slate-500">Todavía no se completaron todas las materias requeridas.</p>
+        )}
+      </div>
+
+      {/* COMPOSITION / IP REGISTRATION */}
+      <div className="glass rounded-2xl p-6 border border-slate-800 shadow-xl space-y-6">
       <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <div className="flex items-center gap-2 text-cyan-400">
           <Icons.Music />
@@ -298,6 +477,7 @@ export const StudentPortal = () => {
           <p className="text-xs text-slate-500">Esta operación toma unos segundos.</p>
         </div>
       )}
+      </div>
     </div>
   )
 }

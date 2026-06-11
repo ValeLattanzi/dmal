@@ -34,6 +34,19 @@ export interface Transaction {
   block: number | string
 }
 
+export interface WorkSubmission {
+  id: string
+  subjectId: number
+  subjectName: string
+  title: string
+  fileName: string
+  fileUrl: string
+  status: 'pending' | 'graded'
+  score?: number
+}
+
+export type ProfessorAssignment = Record<number, { id: number; name: string }>
+
 export type UserRole = 'professor' | 'student' | 'validator' | 'admin'
 
 export interface Toast {
@@ -48,6 +61,8 @@ export interface AppState {
   isSbtRevoked: boolean
   blockHeight: number
   diplomaTokenId: number
+  submissions: WorkSubmission[]
+  professorAssignments: ProfessorAssignment
 }
 
 export interface ContractAddresses {

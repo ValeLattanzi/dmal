@@ -5,9 +5,20 @@ import { ethers } from 'ethers'
 import { Icons } from './Icons'
 import { etherscanLinks, truncateHash } from '../utils/etherscan'
 
+const SUBJECTS: Record<number, string> = {
+  1: 'Composición Musical I',
+  2: 'Contrapunto Avanzado',
+  3: 'Audioperceptiva V',
+}
+
 export const AdminPortal = () => {
-  const [activeTab, setActiveTab] = useState<'curriculum' | 'enroll' | 'diploma' | 'recovery'>('curriculum')
+  const [activeTab, setActiveTab] = useState<'curriculum' | 'professors' | 'enroll' | 'diploma' | 'recovery'>('curriculum')
   const [isLoading, setIsLoading] = useState(false)
+  const [eligibility, setEligibility] = useState<boolean | null>(null)
+  const [isCheckingEligibility, setIsCheckingEligibility] = useState(false)
+
+  // Professors tab state
+  const [profForms, setProfForms] = useState<Record<number, { id: string; name: string }>>({})
 
   // Curriculum tab state
   const [careerId, setCareerId] = useState('')
@@ -23,8 +34,16 @@ export const AdminPortal = () => {
   // Recovery tab state
   const [reissuedWallet, setReissuedWallet] = useState('')
 
-  const { walletAddress, setWalletAddress, setSbtRevoked, isSbtRevoked, addLog, showToast } =
-    useAppStore()
+  const {
+    walletAddress,
+    setWalletAddress,
+    setSbtRevoked,
+    isSbtRevoked,
+    addLog,
+    showToast,
+    professorAssignments,
+    assignProfessor,
+  } = useAppStore()
 
   // === CURRICULUM TAB ===
   const handleDefineCurriculum = async (e: React.FormEvent) => {
@@ -113,7 +132,48 @@ export const AdminPortal = () => {
     }
   }
 
+  // === PROFESSORS TAB ===
+  const handleAssignProfessor = (subjectId: number, e: React.FormEvent) => {
+    e.preventDefault()
+    const form = profForms[subjectId]
+    if (!form?.id?.trim() || !form?.name?.trim()) {
+      showToast('Completa ID y nombre del docente', 'error')
+      return
+    }
+
+    const profId = parseInt(form.id)
+    if (isNaN(profId) || profId <= 0) {
+      showToast('El ID del docente debe ser un número > 0', 'error')
+      return
+    }
+
+    assignProfessor(subjectId, profId, form.name.trim())
+    addLog(`ADMIN - Docente "${form.name.trim()}" (ID ${profId}) asignado a "${SUBJECTS[subjectId]}"`)
+    showToast(`✔️ Docente asignado a ${SUBJECTS[subjectId]}`, 'success')
+  }
+
   // === DIPLOMA TAB ===
+  const handleCheckEligibility = async () => {
+    if (!diplomaAddress.startsWith('0x') || diplomaAddress.length < 15) {
+      showToast('Por favor ingresa la dirección del graduado', 'error')
+      return
+    }
+
+    setIsCheckingEligibility(true)
+    setEligibility(null)
+    try {
+      const completed = await blockchainService.hasCompletedAllSubjects(diplomaAddress)
+      setEligibility(completed)
+      addLog(`ADMIN - hasCompletedAllSubjects(${diplomaAddress.substring(0, 10)}...) -> ${completed}`)
+    } catch (err: any) {
+      const reason = err?.reason ?? err?.shortMessage ?? err?.message ?? 'Error desconocido'
+      showToast(`Error: ${reason}`, 'error')
+      addLog(`[ERROR] hasCompletedAllSubjects: ${reason}`)
+    } finally {
+      setIsCheckingEligibility(false)
+    }
+  }
+
   const handleMintDiploma = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!diplomaAddress.trim()) {
@@ -181,7 +241,7 @@ export const AdminPortal = () => {
     <div className="space-y-6">
       {/* Tab Selector */}
       <div className="flex gap-2 border-b border-slate-800 overflow-x-auto pb-4">
-        {(['curriculum', 'enroll', 'diploma', 'recovery'] as const).map((tab) => (
+        {(['curriculum', 'professors', 'enroll', 'diploma', 'recovery'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -191,8 +251,9 @@ export const AdminPortal = () => {
                 : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
             }`}
           >
-            {tab === 'curriculum' && '📚 Currícula'}
-            {tab === 'enroll' && '📝 Inscribir'}
+            {tab === 'curriculum' && '📚 1. Currícula'}
+            {tab === 'professors' && '🧑‍🏫 2. Docentes'}
+            {tab === 'enroll' && '📝 3. Inscribir'}
             {tab === 'diploma' && '🎓 Diploma'}
             {tab === 'recovery' && '🔐 Recuperación'}
           </button>
@@ -256,6 +317,71 @@ export const AdminPortal = () => {
               )}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* PROFESSORS TAB */}
+      {activeTab === 'professors' && (
+        <div className="glass rounded-2xl p-6 border border-slate-800 shadow-xl space-y-6">
+          <div className="flex items-center gap-2 text-amber-400 border-b border-slate-800 pb-3">
+            <Icons.User />
+            <h3 className="font-bold text-lg">Asignar Docentes a Materias</h3>
+          </div>
+
+          <p className="text-xs text-slate-400">
+            Paso 2: asigná un docente responsable a cada materia de la currícula. Esta asignación es
+            visual/organizativa (no se registra on-chain) y se usa para guiar la corrección de notas.
+          </p>
+
+          <div className="space-y-4">
+            {Object.entries(SUBJECTS).map(([id, name]) => {
+              const subjectId = parseInt(id)
+              const current = professorAssignments[subjectId]
+              const form = profForms[subjectId] ?? { id: '', name: '' }
+              return (
+                <form
+                  key={id}
+                  onSubmit={(e) => handleAssignProfessor(subjectId, e)}
+                  className="bg-slate-950 border border-slate-850 rounded-xl p-4 space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-slate-200">{name}</span>
+                    {current && (
+                      <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-1 rounded-full font-mono">
+                        Actual: {current.name} (ID {current.id})
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-3">
+                    <input
+                      type="number"
+                      value={form.id}
+                      onChange={(e) =>
+                        setProfForms((prev) => ({ ...prev, [subjectId]: { ...form, id: e.target.value } }))
+                      }
+                      placeholder="ID docente"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-mono"
+                    />
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={(e) =>
+                        setProfForms((prev) => ({ ...prev, [subjectId]: { ...form, name: e.target.value } }))
+                      }
+                      placeholder="Nombre del docente"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-all"
+                    >
+                      Asignar
+                    </button>
+                  </div>
+                </form>
+              )
+            })}
+          </div>
         </div>
       )}
 
@@ -345,7 +471,10 @@ export const AdminPortal = () => {
               <input
                 type="text"
                 value={diplomaAddress}
-                onChange={(e) => setDiplomaAddress(e.target.value)}
+                onChange={(e) => {
+                  setDiplomaAddress(e.target.value)
+                  setEligibility(null)
+                }}
                 placeholder="0x..."
                 className="w-full bg-slate-950 border border-slate-850 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
                 required
@@ -354,6 +483,36 @@ export const AdminPortal = () => {
                 El hash del legajo se genera automáticamente usando la dirección + timestamp.
               </p>
             </div>
+
+            <button
+              type="button"
+              onClick={handleCheckEligibility}
+              disabled={isCheckingEligibility}
+              className="w-full bg-slate-800 hover:bg-slate-700 disabled:text-slate-500 text-slate-200 font-bold py-2.5 px-4 rounded-xl transition-all flex justify-center items-center gap-2 text-xs uppercase tracking-wider"
+            >
+              {isCheckingEligibility ? (
+                <>
+                  <span className="w-3 h-3 border-2 border-slate-300 border-t-transparent rounded-full animate-spin"></span>
+                  Verificando...
+                </>
+              ) : (
+                'Verificar Elegibilidad (hasCompletedAllSubjects)'
+              )}
+            </button>
+
+            {eligibility !== null && (
+              <div
+                className={`rounded-xl p-3 text-xs font-semibold border ${
+                  eligibility
+                    ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-400'
+                    : 'bg-red-950/30 border-red-500/40 text-red-400'
+                }`}
+              >
+                {eligibility
+                  ? '✅ El alumno completó todas las materias de su currícula. Puede emitirse el diploma.'
+                  : '❌ El alumno todavía no completó todas las materias requeridas.'}
+              </div>
+            )}
 
             {diplomaAddress.startsWith('0x') && diplomaAddress.length >= 15 && (
               <div className="bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-4 space-y-2">

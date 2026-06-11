@@ -1,5 +1,5 @@
 import { ethers, Contract } from 'ethers'
-import type { ContractAddresses, Grade, Composition } from '../types'
+import type { ContractAddresses, Grade, Composition, Transaction } from '../types'
 
 // Subject names mapping for UI display
 const SUBJECT_NAMES: Record<number, string> = {
@@ -25,6 +25,7 @@ const ACADEMY_ABI = [
   'function activeStudents(address) external view returns (bool)',
   'function canonicalStudent(address) external view returns (address)',
   'function academicRecords(address, uint256) external view returns (uint8 score, uint8 attempts, uint32 approvalDate, bool approved, uint16 professorId)',
+  'event GradeSubmitted(address indexed student, uint256 indexed subjectId, uint8 score, uint16 indexed professorId)',
 ]
 
 const DIPLOMA_ABI = [
@@ -40,6 +41,7 @@ const COMPOSITION_ABI = [
   'function compositionCount() external view returns (uint256)',
   'function registry(uint256) external view returns (string ipfsHash, string title, address author, uint32 timestamp)',
   'function registrationFee() external view returns (uint256)',
+  'event CompositionRegistered(address indexed author, uint256 indexed compositionId, string ipfsHash)',
 ]
 
 export class BlockchainService {
@@ -420,17 +422,11 @@ export class BlockchainService {
   async getLatestGradeSubmissions(limit: number = 20) {
     if (!this.contracts.academy) throw new Error('Academy contract not initialized')
     try {
-      const readProvider = new ethers.BrowserProvider((window as any).ethereum)
-      const latestBlock = await readProvider.getBlockNumber()
-
-      const logs = await readProvider.getLogs({
-        address: this.addresses.academy,
-        topics: [ethers.id('GradeSubmitted(address,uint256,uint8,uint16)')],
-        fromBlock: Math.max(0, latestBlock - 10000),
-        toBlock: latestBlock,
-      })
-
-      return logs.slice(-limit)
+      return await this.fetchLogsChunked(
+        this.addresses.academy,
+        [ethers.id('GradeSubmitted(address,uint256,uint8,uint16)')],
+        limit
+      )
     } catch (error) {
       console.error('Error getting grade submissions:', error)
       return []
@@ -440,21 +436,96 @@ export class BlockchainService {
   async getLatestCompositionRegistrations(limit: number = 20) {
     if (!this.contracts.composition) throw new Error('Composition contract not initialized')
     try {
-      const readProvider = new ethers.BrowserProvider((window as any).ethereum)
-      const latestBlock = await readProvider.getBlockNumber()
-
-      const logs = await readProvider.getLogs({
-        address: this.addresses.composition,
-        topics: [ethers.id('CompositionRegistered(address,uint256,string)')],
-        fromBlock: Math.max(0, latestBlock - 10000),
-        toBlock: latestBlock,
-      })
-
-      return logs.slice(-limit)
+      return await this.fetchLogsChunked(
+        this.addresses.composition,
+        [ethers.id('CompositionRegistered(address,uint256,string)')],
+        limit
+      )
     } catch (error) {
       console.error('Error getting composition registrations:', error)
       return []
     }
+  }
+
+  // Fetch the on-chain transaction history (grades + compositions) for a given wallet,
+  // used to preload the Ledger when a user connects their wallet.
+  async getWalletTransactionHistory(walletAddress: string, limit: number = 50): Promise<Transaction[]> {
+    if (!this.contracts.academy || !this.contracts.composition) {
+      throw new Error('Contracts not initialized')
+    }
+
+    try {
+      const paddedAddr = ethers.zeroPadValue(walletAddress, 32)
+
+      const [gradeLogs, compLogs] = await Promise.all([
+        this.fetchLogsChunked(
+          this.addresses.academy,
+          [ethers.id('GradeSubmitted(address,uint256,uint8,uint16)'), paddedAddr],
+          limit
+        ),
+        this.fetchLogsChunked(
+          this.addresses.composition,
+          [ethers.id('CompositionRegistered(address,uint256,string)'), paddedAddr],
+          limit
+        ),
+      ])
+
+      const gradeTxs: Transaction[] = gradeLogs.map((log) => {
+        const parsed = this.contracts.academy!.interface.parseLog(log)
+        const subjectId = Number(parsed?.args.subjectId ?? 0)
+        const score = Number(parsed?.args.score ?? 0)
+        return {
+          id: log.transactionHash,
+          type: 'Carga de Nota',
+          detail: `${SUBJECT_NAMES[subjectId] ?? `Materia #${subjectId}`}: ${score}`,
+          status: 'CONFIRMED',
+          txHash: log.transactionHash,
+          block: log.blockNumber,
+        }
+      })
+
+      const compTxs: Transaction[] = compLogs.map((log) => {
+        const parsed = this.contracts.composition!.interface.parseLog(log)
+        const ipfsHash: string = parsed?.args.ipfsHash ?? ''
+        return {
+          id: log.transactionHash,
+          type: 'Registro IP',
+          detail: `IPFS: ${ipfsHash.slice(0, 16)}...`,
+          status: 'CONFIRMED',
+          txHash: log.transactionHash,
+          block: log.blockNumber,
+        }
+      })
+
+      return [...gradeTxs, ...compTxs].sort((a, b) => Number(b.block) - Number(a.block))
+    } catch (error) {
+      console.error('Error getting wallet transaction history:', error)
+      return []
+    }
+  }
+
+  private async fetchLogsChunked(address: string, topics: (string | null)[], limit: number) {
+    const readProvider = new ethers.BrowserProvider((window as any).ethereum)
+    const latestBlock = await readProvider.getBlockNumber()
+    const CHUNK = 500
+    const MAX_CHUNKS = 20 // ~10000 bloques totales
+    const results: ethers.Log[] = []
+
+    for (let i = 0; i < MAX_CHUNKS && results.length < limit; i++) {
+      const toBlock = latestBlock - i * CHUNK
+      if (toBlock < 0) break
+      const fromBlock = Math.max(0, toBlock - CHUNK + 1)
+
+      try {
+        const logs = await readProvider.getLogs({ address, topics, fromBlock, toBlock })
+        results.unshift(...logs)
+      } catch (err) {
+        console.warn(`getLogs chunk failed [${fromBlock}-${toBlock}]:`, err)
+      }
+
+      if (fromBlock === 0) break
+    }
+    return results.slice(-limit)
   }
 }
 

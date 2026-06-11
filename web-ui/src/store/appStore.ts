@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AppState, UserRole, Grade, Composition, Transaction, Toast } from '../types'
+import type { AppState, UserRole, Grade, Composition, Transaction, Toast, WorkSubmission, ProfessorAssignment } from '../types'
 
 interface Store extends AppState {
   setCurrentRole: (role: UserRole) => void
@@ -23,6 +23,7 @@ interface Store extends AppState {
   // Transactions
   transactions: Transaction[]
   addTransaction: (tx: Transaction) => void
+  setTransactions: (transactions: Transaction[]) => void
   updateTransactionStatus: (txId: string | number, status: string) => void
   updateTransactionHash: (txId: string | number, txHash: string) => void
 
@@ -34,6 +35,13 @@ interface Store extends AppState {
   // Toast
   toast: Toast | null
   showToast: (message: string, type: Toast['type']) => void
+
+  // Work submissions (TPs)
+  addSubmission: (submission: WorkSubmission) => void
+  markSubmissionGraded: (id: string, score: number) => void
+
+  // Professor assignments (visual only, not on-chain)
+  assignProfessor: (subjectId: number, id: number, name: string) => void
 }
 
 export const useAppStore = create<Store>((set) => ({
@@ -53,17 +61,7 @@ export const useAppStore = create<Store>((set) => ({
   setDiplomaTokenId: (id) => set({ diplomaTokenId: id }),
 
   // Grades
-  grades: [
-    {
-      subjectId: 101,
-      subjectName: 'Composición Musical I',
-      score: 92,
-      approved: true,
-      date: '2026-05-10',
-      professorId: 14,
-      status: 'CONFIRMED',
-    },
-  ],
+  grades: [],
   addGrade: (grade) =>
     set((state) => ({
       grades: [...state.grades, grade],
@@ -77,16 +75,7 @@ export const useAppStore = create<Store>((set) => ({
   setGrades: (grades) => set({ grades }),
 
   // Compositions
-  compositions: [
-    {
-      id: 1,
-      title: 'Sonata para Piano en Sol Menor',
-      ipfsHash: 'QmXoypizjW3WknFixtndV3VCVUWB7F16mdA9nz28bce85S',
-      author: '0xValentinoLattanzi77764DDR5LianLiIII',
-      timestamp: '2026-05-15 14:32',
-      isRegular: true,
-    },
-  ],
+  compositions: [],
   addComposition: (composition) =>
     set((state) => ({
       compositions: [composition, ...state.compositions],
@@ -94,28 +83,12 @@ export const useAppStore = create<Store>((set) => ({
   setCompositions: (compositions) => set({ compositions }),
 
   // Transactions
-  transactions: [
-    {
-      id: 1,
-      type: 'Carga de Nota',
-      detail: 'Composición Musical I: 92',
-      status: 'CONFIRMED',
-      txHash: '0x3ac912fa...e93d',
-      block: 18492019,
-    },
-    {
-      id: 2,
-      type: 'Registro IP',
-      detail: 'Sonata para Piano en Sol Menor (IPFS)',
-      status: 'CONFIRMED',
-      txHash: '0x5b8a11bc...48fa',
-      block: 18492020,
-    },
-  ],
+  transactions: [],
   addTransaction: (tx) =>
     set((state) => ({
       transactions: [tx, ...state.transactions],
     })),
+  setTransactions: (transactions) => set({ transactions }),
   updateTransactionStatus: (txId, status) =>
     set((state) => ({
       transactions: state.transactions.map((t) =>
@@ -147,6 +120,7 @@ export const useAppStore = create<Store>((set) => ({
       logs: [],
       isSbtRevoked: false,
       walletAddress: '0xValentinoLattanzi77764DDR5LianLiIII',
+      submissions: [],
     }),
 
   // Toast
@@ -155,4 +129,28 @@ export const useAppStore = create<Store>((set) => ({
     set({ toast: { message, type } })
     setTimeout(() => set({ toast: null }), 4000)
   },
+
+  // Work submissions (TPs)
+  submissions: [],
+  addSubmission: (submission) =>
+    set((state) => ({
+      submissions: [submission, ...state.submissions],
+    })),
+  markSubmissionGraded: (id, score) =>
+    set((state) => ({
+      submissions: state.submissions.map((s) =>
+        s.id === id ? { ...s, status: 'graded', score } : s
+      ),
+    })),
+
+  // Professor assignments (visual only, not on-chain)
+  professorAssignments: {
+    1: { id: 14, name: 'Prof. Marcos Aguirre' },
+    2: { id: 15, name: 'Prof. Lucía Fernández' },
+    3: { id: 16, name: 'Prof. Diego Romero' },
+  },
+  assignProfessor: (subjectId, id, name) =>
+    set((state) => ({
+      professorAssignments: { ...state.professorAssignments, [subjectId]: { id, name } },
+    })),
 }))

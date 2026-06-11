@@ -16,8 +16,6 @@ export const Header = () => {
   const [showExplorer, setShowExplorer] = useState(false)
   const [showAudit, setShowAudit] = useState(false)
   const {
-    currentRole,
-    setCurrentRole,
     blockHeight,
     isConnected,
     walletAddress,
@@ -26,6 +24,7 @@ export const Header = () => {
     setGrades,
     setCompositions,
     setDiplomaTokenId,
+    setTransactions,
     showToast,
     addLog,
   } = useAppStore()
@@ -56,6 +55,12 @@ export const Header = () => {
           `[INFO] Chain - Diploma SBT #${data.diplomaTokenId} detectado en esta wallet`
         )
         showToast(`SBT Diploma #${data.diplomaTokenId} detectado on-chain`, 'confirmed')
+      }
+
+      const history = await blockchainService.getWalletTransactionHistory(address)
+      if (history.length > 0) {
+        setTransactions(history)
+        addLog(`[INFO] Chain - ${history.length} transacción(es) histórica(s) cargada(s) al Ledger desde la EVM`)
       }
     } catch (err: any) {
       showToast(err?.message ?? 'Error conectando MetaMask', 'error')
@@ -202,23 +207,6 @@ export const Header = () => {
         >
           📊 Auditoría
         </button>
-
-        {/* Role Selector */}
-        <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 w-full sm:w-auto">
-          <span className="text-xs text-slate-500 font-medium px-2 hidden sm:flex items-center gap-1">
-            <Icons.User /> Rol:
-          </span>
-          <select
-            value={currentRole}
-            onChange={(e) => setCurrentRole(e.target.value as any)}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-bold py-2 px-4 rounded-lg border-none focus:ring-2 focus:ring-indigo-400 cursor-pointer outline-none transition-all w-full sm:w-auto"
-          >
-            <option value="professor">👨‍🏫 Portal Docente</option>
-            <option value="student">🎼 Portal Alumno</option>
-            <option value="validator">🔍 Validador</option>
-            <option value="admin">⚙️ Administración</option>
-          </select>
-        </div>
       </div>
 
       {/* Audit Dashboard Modal */}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { blockchainService } from '../services/blockchain'
 import { etherscanLinks, truncateHash } from '../utils/etherscan'
 import type { Grade, Composition } from '../types'
@@ -114,7 +115,7 @@ export const AuditDashboard = ({ onClose }: { onClose: () => void }) => {
     setIsLoading(false)
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
@@ -463,6 +464,7 @@ export const AuditDashboard = ({ onClose }: { onClose: () => void }) => {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
